@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LeftSidebar from "@/components/sidebars/LeftSidebar";
+import { RightSidebar } from "@/components/sidebars/RightSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen`}
       >
         <LeftSidebar />
-        {children}
+
+        <main className="flex-1">{children}</main>
+
+        {/* Right sidebar with fixed width 300px and stuck to right */}
+        <div className="w-[300px] shrink-0">
+          <RightSidebar />
+        </div>
       </body>
     </html>
   );
