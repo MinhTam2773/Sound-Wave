@@ -1,0 +1,55 @@
+Settings:
+Search
+Personal Information:
+	Edit Displayed Information: Edit page
+	Show Following List
+	Show Followers list
+	Blocked Users
+
+Visibility:
+	Show Activity Status: Online / Last Seen
+	Allow Profile in Search
+
+Content Privacy:
+	Who can comment: everyone/followers/None
+	Who can see: everyone/followers/Except these/ Only These/ Only Me
+
+Notification:
+	Allow notification when:
+		New Messages
+		Post/Audio interactions
+		Follower Activity
+		Mentions (@tag)
+		System alert
+Music Player Control:
+	Skip Forward:5/10/30/60 seconds
+	Skip Back: 5/10/30/60 seconds
+
+Audio Upload Settings
+	Default privacy
+	Auto-add to collection: choose default collection
+	Default tags
+
+Theme & Colors
+	Theme Mode: Light/Dark/System
+	
+
+Data & Security:
+	Active Session: view and manage
+	Password: change password
+	Account Deletion
+Audio Enhancement: not now
+Note:
+- Loudness Normalization: consistent volume level
+- Loudness Normalization: LUFS targeting
+- when user is listening to a music card in Music Tab, when they change to
+any tab, a music player at the bottom must show
+- music player behavior:
+	auto play next song in defaul t unless replay button is toggled
+	able to mute and stop
+	skip back/forward: 5/10 seconds
+
+- messages window
+- refine right side bar
+	
+	
