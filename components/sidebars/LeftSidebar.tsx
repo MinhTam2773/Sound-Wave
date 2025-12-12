@@ -45,7 +45,7 @@ const LeftSidebar = () => {
                   href={link.href}
                   className={`flex items-center gap-[10px] w-full min-h-[45px] rounded-[10px] p-0 pl-[15px] transition-colors ${
                     pathname === link.href
-                      ? "bg-gradient-to-r from-[#9000ff] to-[#ffc300]"
+                      ? "bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300]"
                       : "hover:bg-white/10"
                   }`}
                 >
