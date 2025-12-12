@@ -1,4 +1,3 @@
-// components/ImagePost.tsx
 import React from "react";
 
 const ImagePost = () => {
@@ -14,10 +13,10 @@ const ImagePost = () => {
           <div className="w-[40px] h-[40px] rounded-full bg-white flex-shrink-0" />
           <div className="flex flex-col gap-0 justify-center">
             <div className="text-[1.1rem] font-semibold text-white tracking-tight mb-0">
-              Username
+              Image
             </div>
             <div className="text-[0.95rem] text-white opacity-70 tracking-tight">
-              @username . 2h ago
+              @image-post . 2h ago
             </div>
           </div>
         </div>

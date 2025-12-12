@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import UploadModal from "@/components/post/upload/UploadModal";
 import TextPost from "@/components/post/text/text";
 import ImagePost from "@/components/post/image/image";
+import AudioPost from "@/components/post/audio/audio";
+import MusicPost from "@/components/post/music/music";
 
 
 export default function LandingPage() {
@@ -34,6 +36,8 @@ export default function LandingPage() {
             <TextPost key={index} text={text} />
           ))}
           <ImagePost />
+          <AudioPost />
+          <MusicPost />
         </div>
       </div>
     </main>
