@@ -62,13 +62,19 @@ const LeftSidebar = () => {
         </div>
 
         {/* User Profile */}
-        <div className="flex items-center gap-[16px] w-[146px] h-[41px]">
+        <Link
+          href="/profile"
+          className="flex items-center gap-[16px] w-full min-h-[45px] rounded-[10px] pt-[10px] pl-[10px] pb-[10px] hover:bg-white/10 transition-colors"
+        >
           <div className="w-[40px] h-[40px] rounded-full bg-white" />
           <div className="flex flex-col justify-center h-[41px] gap-0">
             <span className="text-white text-[18px] font-semibold mb-[2px]">Username</span>
             <span className="text-white text-[15px] font-normal opacity-70">@name</span>
           </div>
-        </div>
+        </Link>
+
+
+
       </div>
     </aside>
   );
