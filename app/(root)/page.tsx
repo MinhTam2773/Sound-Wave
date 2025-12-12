@@ -1,5 +1,20 @@
+"use client";
+
+import React, { useState } from "react";
 import UploadModal from "@/components/post/upload/UploadModal";
+import TextPost from "@/components/post/text/text";
+import ImagePost from "@/components/post/image/image";
+
+
 export default function LandingPage() {
+  const [posts, setPosts] = useState<string[]>([]);
+
+  // Function to handle new post from UploadModal
+  const handleNewPost = (text: string) => {
+    if (text.trim() === "") return;
+    setPosts([text, ...posts]); // add new post to the top
+  };
+
   return (
     <main className="w-full h-screen overflow-y-scroll bg-[#232323] flex flex-col items-center p-0">
       <div className="w-[709px] max-w-full flex flex-col gap-[20px] mx-auto p-0">
@@ -10,9 +25,16 @@ export default function LandingPage() {
           </div>
         </div>
 
-         {/* Upload Modal */}
-        <UploadModal />
-        {/* Posts will go here */}
+        {/* Upload Modal */}
+        <UploadModal onPost={handleNewPost} />
+
+        {/* Posts */}
+        <div className="flex flex-col gap-[20px] w-full">
+          {posts.map((text, index) => (
+            <TextPost key={index} text={text} />
+          ))}
+          <ImagePost />
+        </div>
       </div>
     </main>
   );

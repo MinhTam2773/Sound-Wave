@@ -2,13 +2,17 @@
 
 import React, { useState, useRef, useEffect } from "react";
 
-export default function UploadModal() {
+interface UploadModalProps {
+  onPost: (text: string) => void;
+}
+
+export default function UploadModal({ onPost }: UploadModalProps) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handlePost = () => {
-    console.log("Posted:", text);
-    setText("");
+    onPost(text); // send text to LandingPage
+    setText(""); // clear textarea
   };
 
   useEffect(() => {
@@ -49,8 +53,8 @@ export default function UploadModal() {
 
           {/* Action buttons */}
           <div className="flex flex-row items-center justify-between w-full gap-[97px]">
-            {/* Icons */}
             <div className="flex flex-row items-center gap-[25px]">
+              {/* Icons (pictures/music) */}
               <img
                 className="w-[25px] h-[35px] bg-[#333] rounded-[4px] object-cover"
                 src="https://s3-alpha-sig.figma.com/img/356e/0ccf/322966846a25c5362ed24e842af29722?Expires=1766361600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=KixWVqTsieLm95kzAd2CDsDEm6ks4WcB~Wq3zuwk98vei4~Pfy~1~7TNu6xowf~ilzSVLenYxPrCJJvqNnjJ02CRVIHfryYXGhv~FH8F0upuwMm3nqgsMMxVdwDVyBlvoHxHmV1fF40jLNin37jgto9cdh61muG~N6HZMUKquN7I5LHrIt2pR8Wfc-fC8qaLO3LSUVCdIzcudlxjgPRYyql519FxWjdEGfljCqtOKVF2Yl9Jo7JSwgjhpeTEOV2Zh5~uv77USb9QaNBYXN-TYsgNV5JgQ1gwU8IMufMvKaC7VnH8hkIow6wPIAM15NRzEtXUQZWUmtdHBM2RE67m0Q__"
