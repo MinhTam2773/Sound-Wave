@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   if (!code) {
     console.log('🔐 OAuth callback - No code found');
-    return NextResponse.redirect(new URL('/login', requestUrl.origin));
+    return NextResponse.redirect(new URL('/auth/login', requestUrl.origin));
   }
 
   try {
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('❌ OAuth exchange error:', error.message);
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
+        new URL(`/auth/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
       );
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ OAuth callback error:', error);
     return NextResponse.redirect(
-      new URL('/login?error=server_error', requestUrl.origin)
+      new URL('/auth/login?error=server_error', requestUrl.origin)
     );
   }
 }
