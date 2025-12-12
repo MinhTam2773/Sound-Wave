@@ -1,3 +1,4 @@
+import UploadModal from "@/components/post/upload/UploadModal";
 export default function LandingPage() {
   return (
     <main className="w-full h-screen overflow-y-scroll bg-[#232323] flex flex-col items-center p-0">
@@ -8,6 +9,9 @@ export default function LandingPage() {
             Home
           </div>
         </div>
+
+         {/* Upload Modal */}
+        <UploadModal />
         {/* Posts will go here */}
       </div>
     </main>
