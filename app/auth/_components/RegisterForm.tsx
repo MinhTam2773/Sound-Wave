@@ -1,118 +1,270 @@
 "use client";
 
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { createClient } from "@/lib/supabase/client";
+
+// Zod schema for form validation
+const registerSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(20, "Username must be less than 20 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
-  const [form, setForm] = useState({
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
+  const supabase = createClient();
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  // Initialize react-hook-form with zod resolver
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      email: "",
+      username: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
-  const [error, setError] = useState("");
+  const onSubmit = async (data: RegisterFormData) => {
+    setLoading(true);
+    setServerError(null);
 
-  function handleChange(e: any) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-  }
+    try {
+      // First, sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.username,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-  function handleSubmit(e: any) {
-    e.preventDefault();
+      if (authError) {
+        throw authError;
+      }
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+      // Optional: Create a user profile in your database
+      // if (authData.user) {
+      //   const { error: profileError } = await supabase
+      //     .from("profiles") // Make sure you have this table
+      //     .insert([
+      //       {
+      //         id: authData.user.id,
+      //         username: data.username,
+      //         email: data.email,
+      //         created_at: new Date().toISOString(),
+      //         updated_at: new Date().toISOString(),
+      //       },
+      //     ]);
+
+      //   if (profileError) {
+      //     console.error("Profile creation error:", profileError);
+      //     // Don't throw here - user is created, just profile failed
+      //   }
+      // }
+
+      // console.log("Registration successful:", authData);
+      
+      // Show success message and redirect
+      alert("Registration successful! Please check your email to confirm your account.");
+      // router.push("/auth/login");
+      // router.refresh();
+      
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      // Handle specific Supabase errors
+      if (error.message?.includes("User already registered")) {
+        setServerError("This email is already registered. Please use a different email or sign in.");
+      } else if (error.message?.includes("password")) {
+        setServerError("Password does not meet requirements. Please ensure it meets all criteria.");
+      } else {
+        setServerError(error.message || "Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    // Here you would send data to your backend
-    console.log("Form submitted:", form);
-
-    alert("Signed up successfully!");
-  }
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white w-full max-w-md p-6 rounded-xl shadow-md space-y-4"
-    >
-      <h2 className="text-2xl font-bold text-center">Create Account</h2>
-
-      {/* Email */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
-        <input
-          type="email"
-          name="email"
-          placeholder="youremail@example.com"
-          value={form.email}
-          onChange={handleChange}
-          required
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-        />
+    <div className="relative w-[531px] max-w-[95vw] rounded-[20px] box-border px-5 py-4 flex flex-col gap-[28px] overflow-hidden">
+      {/* Gradient Border */}
+      <div className="absolute inset-0 rounded-[20px] pointer-events-none z-0">
+        <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-[#9100ff] to-[#ffc400]" />
+        <div className="absolute inset-[1px] rounded-[20px] bg-white" />
       </div>
 
-      {/* Username */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Username</label>
-        <input
-          type="text"
-          name="username"
-          placeholder="yourusername"
-          value={form.username}
-          onChange={handleChange}
-          required
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-        />
+      <div className="relative z-10">
+        {/* Title */}
+        <span className="text-2xl text-center font-bold tracking-[-0.4px] bg-gradient-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] bg-clip-text text-transparent block mb-[15px]">
+          Create Account
+        </span>
+
+        {/* Server Error Message */}
+        {serverError && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+            {serverError}
+          </div>
+        )}
+
+        {/* Register Form */}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          autoComplete="off"
+        >
+          {/* Email */}
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-md font-medium text-black">
+              Email
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                placeholder="youremail@example.com"
+                autoComplete="email"
+                className={`w-full py-2 rounded-md border px-3 text-md focus:outline-none transition ${
+                  errors.email
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-[#d9d9d9] focus:border-[#9100ff]"
+                }`}
+                disabled={loading}
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-md font-medium text-black">
+              Username
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="yourusername"
+                autoComplete="username"
+                className={`w-full py-2 rounded-md border px-3 focus:outline-none transition ${
+                  errors.username
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-[#d9d9d9] focus:border-[#9100ff]"
+                }`}
+                disabled={loading}
+                {...register("username")}
+              />
+              {errors.username && (
+                <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="flex flex-col gap-[6px]">
+            <label className="font-medium text-black">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="********"
+                autoComplete="new-password"
+                className={`w-full py-2 px-3 rounded-md border text-md focus:outline-none transition ${
+                  errors.password
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-[#d9d9d9] focus:border-[#9100ff]"
+                }`}
+                disabled={loading}
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="flex flex-col gap-[6px]">
+            <label className=" font-medium text-black">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type="password"
+                placeholder="********"
+                autoComplete="new-password"
+                className={`w-full py-2 px-3 rounded-md border focus:outline-none transition ${
+                  errors.confirmPassword
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-[#d9d9d9] focus:border-[#9100ff]"
+                }`}
+                disabled={loading}
+                {...register("confirmPassword")}
+              />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-[48px] rounded-[15px] w-full bg-gradient-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] text-white text-[18px] font-bold flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Creating Account...
+              </div>
+            ) : (
+              "SIGN UP"
+            )}
+          </button>
+        </form>
       </div>
 
-      {/* Password */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Password</label>
-        <input
-          type="password"
-          name="password"
-          placeholder="*******"
-          value={form.password}
-          onChange={handleChange}
-          required
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-        />
+      {/* Login Link */}
+      <div className="relative z-10 w-full text-center">
+        <p className="text-[15px] text-[#6b6b6b]">
+          Already have an account?{" "}
+          <a
+            href="/auth/login"
+            className="text-[#9100ff] underline hover:text-[#7a00d6] transition"
+          >
+            Sign in
+          </a>
+        </p>
       </div>
-
-      {/* Confirm Password */}
-      <div>
-        <label className="block text-sm font-medium mb-1">
-          Confirm Password
-        </label>
-        <input
-          type="password"
-          name="confirmPassword"
-          placeholder="*******"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          required
-          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-        />
-      </div>
-
-      {/* Error message */}
-      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
-      {/* Submit Button */}
-      <button
-        type="submit"
-        className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600 to-yellow-400 text-white font-semibold hover:opacity-90 transition"
-      >
-        Sign Up
-      </button>
-
-      <p className="text-center text-sm">
-        Already have an account?{" "}
-        <a href="/auth/login" className="text-purple-600 underline">
-          Sign in
-        </a>
-      </p>
-    </form>
+    </div>
   );
 }

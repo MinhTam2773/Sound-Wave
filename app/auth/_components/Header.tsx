@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export default function Header() {
   return (
-    <header className="fixed top-0 w-full min-w-[320px] h-[83px] bg-[#cfcfcf] flex items-center justify-between px-[90px] gap-2
+    <header className="fixed top-0 w-full min-w-[320px] h-15 bg-[#cfcfcf] flex items-center justify-between px-[90px] gap-2
     max-[1200px]:px-10 max-[900px]:px-5 max-[600px]:flex-col max-[600px]:h-auto max-[600px]:py-3 max-[600px]:gap-3">
       
       {/* Brand */}

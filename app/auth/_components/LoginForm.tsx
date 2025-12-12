@@ -126,7 +126,7 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="relative w-[531px] max-w-[95vw] rounded-[20px] box-border p-[43px_32px] flex flex-col gap-[28px] overflow-hidden">
+    <div className="relative w-[531px] max-w-[95vw] rounded-[20px] box-border px-5 py-4 flex flex-col gap-[28px] overflow-hidden">
       {/* Gradient Border */}
       <div className="absolute inset-0 rounded-[20px] pointer-events-none z-0">
         <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-[#9100ff] to-[#ffc400]" />
@@ -135,7 +135,7 @@ const LoginForm = () => {
 
       <div className="relative z-10">
         {/* Title */}
-        <span className="text-[32px] font-bold tracking-[-0.4px] bg-gradient-to-r from-[#9100ff] to-[#ffc400] bg-clip-text text-transparent block mb-[15px]">
+        <span className="text-2xl text-center font-bold tracking-[-0.4px] bg-gradient-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] bg-clip-text text-transparent block mb-[15px]">
           Welcome Back!
         </span>
 
@@ -149,12 +149,12 @@ const LoginForm = () => {
         {/* Login Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-[20px]"
+          className="flex flex-col gap-4"
           autoComplete="off"
         >
           {/* Email */}
           <div className="flex flex-col gap-[6px]">
-            <label className="text-[15px] font-medium text-black">
+            <label className=" font-medium text-black">
               Email
             </label>
             <div className="relative">
@@ -162,7 +162,7 @@ const LoginForm = () => {
                 type="email"
                 placeholder="Enter your email"
                 autoComplete="email"
-                className={`w-full h-[55px] rounded-[15px] border px-[20px] text-[17px] focus:outline-none transition ${
+                className={`w-full rounded-md border px-3 py-2 focus:outline-none transition ${
                   errors.email
                     ? "border-red-500 focus:border-red-500"
                     : "border-[#d9d9d9] focus:border-[#9100ff]"
@@ -178,7 +178,7 @@ const LoginForm = () => {
 
           {/* Password */}
           <div className="flex flex-col gap-[6px]">
-            <label className="text-[15px] font-medium text-black">
+            <label className=" font-medium text-black">
               Password
             </label>
             <div className="relative">
@@ -186,7 +186,7 @@ const LoginForm = () => {
                 type="password"
                 placeholder="Enter your password"
                 autoComplete="current-password"
-                className={`w-full h-[55px] rounded-[15px] border px-[20px] text-[17px] focus:outline-none transition ${
+                className={`w-full  rounded-md border px-3 py-2 focus:outline-none transition ${
                   errors.password
                     ? "border-red-500 focus:border-red-500"
                     : "border-[#d9d9d9] focus:border-[#9100ff]"
@@ -212,7 +212,7 @@ const LoginForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="h-[48px] rounded-[15px] w-full bg-gradient-to-r from-[#9100ff] to-[#ffc400] text-white text-[18px] font-bold flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="h-[48px] rounded-[15px] w-full bg-gradient-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] text-white text-[18px] font-bold flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ const LoginForm = () => {
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="flex-1 h-[48px] rounded-[15px] border border-[#d1d1d1] bg-white flex items-center justify-center gap-[10px] text-[16px] font-semibold cursor-pointer hover:border-[#9100ff] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex-1 py-2 rounded-[15px] border border-[#d1d1d1] bg-white flex items-center justify-center gap-[10px] font-semibold cursor-pointer hover:border-[#9100ff] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <FcGoogle size={22} />
             Google
@@ -247,7 +247,7 @@ const LoginForm = () => {
             type="button"
             onClick={handleFacebookLogin}
             disabled={loading}
-            className="flex-1 h-[48px] rounded-[15px] bg-[#1877f2] flex items-center justify-center gap-[10px] text-[16px] text-white font-semibold hover:bg-[#145fc4] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex-1 py-2 rounded-[15px] bg-[#1877f2] flex items-center justify-center gap-[10px] text-white font-semibold hover:bg-[#145fc4] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <FaFacebookF size={20} />
             Facebook
