@@ -27,14 +27,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex h-screen bg-[#232323]`}
       >
+        {/* Left Sidebar */}
         <LeftSidebar />
 
-        <main className="flex-1">{children}</main>
+        {/* Main content */}
+        <main className="flex-1 flex flex-col h-full overflow-y-auto">
+          {children}
+        </main>
 
-        {/* Right sidebar with fixed width 300px and stuck to right */}
-        <div className="w-[300px] shrink-0">
+        {/* Right sidebar */}
+        <div className="w-[300px] shrink-0 h-full">
           <RightSidebar />
         </div>
       </body>
