@@ -1,27 +1,29 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 export default function AudioPost() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [waveHeights, setWaveHeights] = useState<number[]>([]);
+
+  // Generate heights only on client
+  useEffect(() => {
+    const heights = Array.from({ length: 7 }, () => Math.random() * 80 + 20);
+    setWaveHeights(heights);
+  }, []);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
+    if (isPlaying) audioRef.current.pause();
+    else audioRef.current.play();
     setIsPlaying(!isPlaying);
   };
 
   const handleTimeUpdate = () => {
     if (!audioRef.current) return;
-    const current = audioRef.current.currentTime;
-    const duration = audioRef.current.duration || 1;
-    setProgress((current / duration) * 100);
+    setProgress((audioRef.current.currentTime / (audioRef.current.duration || 1)) * 100);
   };
 
   const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +45,7 @@ export default function AudioPost() {
     audioRef.current.currentTime = audioRef.current.duration || 0;
     setIsPlaying(false);
   };
+
 
   return (
     <div className="relative bg-[#323131] rounded-[15px] border-[0.5px] border-[#776f6f] p-[14px_15px] flex flex-col gap-[15px] w-full overflow-hidden">
@@ -89,12 +92,12 @@ export default function AudioPost() {
 
       {/* Audio Waves */}
       <div className="flex flex-row gap-[5px] w-full h-[100px] items-end justify-center">
-        {[...Array(7)].map((_, i) => (
+        {waveHeights.map((h, i) => (
           <div
             key={i}
-            className={`w-[10px] rounded-[4px] animate-wave`}
+            className="w-[10px] rounded-[4px] animate-wave"
             style={{
-              height: `${Math.random() * 80 + 20}px`,
+              height: `${h}px`,
               background: "linear-gradient(90deg, #9000ff, #ffc300)",
               animationDelay: `${i * 0.1}s`,
               animationPlayState: isPlaying ? "running" : "paused",
@@ -102,6 +105,7 @@ export default function AudioPost() {
           />
         ))}
       </div>
+
 
       {/* Playback Controls */}
       <div className="flex flex-row items-center justify-center gap-6 mt-2">
