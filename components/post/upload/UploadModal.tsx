@@ -1,32 +1,55 @@
-import React from "react";
+"use client";
 
-const UploadModal: React.FC = () => {
+import React, { useState, useRef, useEffect } from "react";
+
+export default function UploadModal() {
+  const [text, setText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handlePost = () => {
+    console.log("Posted:", text);
+    setText("");
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "0px"; // reset height
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // expand
+    }
+  }, [text]);
+
   return (
     <div className="relative bg-[#323232] rounded-[10px] border-[0.5px] border-[#776f6f] w-full p-[25px_16px_10px_16px] flex flex-col gap-[10px] min-h-[127px] overflow-hidden">
-      {/* Gradient border layers */}
+      {/* Gradient border background */}
       <div className="absolute inset-0 rounded-[10px] p-[1px]">
         <div className="absolute inset-0 rounded-[10px] bg-gradient-to-r from-[#9000ff] to-[#ffc300]" />
         <div className="absolute inset-[1px] rounded-[10px] bg-[#323232]" />
       </div>
 
       <div className="relative z-10 flex flex-row items-start gap-[25px] w-full">
-        {/* Avatar placeholder */}
+        {/* Avatar */}
         <div className="w-[47px] h-[47px] rounded-full bg-white flex-shrink-0" />
 
         <div className="flex flex-col gap-[10px] w-[calc(100%-47px-25px)]">
           {/* Input area */}
-          <div className="relative flex flex-row items-center bg-none rounded-[5px] border-[0.5px] border-[#776f6f] p-0 h-[47px] min-h-[47px] w-full">
+          <div className="relative flex flex-row items-center bg-none rounded-[5px] border-[0.5px] border-[#776f6f] p-0 w-full">
             <div className="absolute inset-0 rounded-[5px] p-[1px]">
               <div className="absolute inset-0 rounded-[5px] bg-gradient-to-r from-[#9000ff] to-[#ffc300]" />
               <div className="absolute inset-[1px] rounded-[5px] bg-[#323232]" />
             </div>
-            <span className="text-[#776f6f] text-[1.1rem] font-normal tracking-tight bg-none border-none outline-none w-full h-[24px] flex items-center p-0 z-10 pl-[25px]">
-              What's on your mind?
-            </span>
+
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="What's on your mind?"
+              className="relative z-10 w-full bg-transparent resize-none overflow-hidden outline-none text-[#fff] placeholder:text-[#776f6f] px-[10px] py-[10px] text-[1.1rem] font-normal"
+            />
           </div>
 
           {/* Action buttons */}
           <div className="flex flex-row items-center justify-between w-full gap-[97px]">
+            {/* Icons */}
             <div className="flex flex-row items-center gap-[25px]">
               <img
                 className="w-[25px] h-[35px] bg-[#333] rounded-[4px] object-cover"
@@ -40,7 +63,11 @@ const UploadModal: React.FC = () => {
               />
             </div>
 
-            <button className="bg-gradient-to-r from-[#9000ff] to-[#ffc300] rounded-[5px] border-none text-white text-[1.1rem] font-semibold w-[90px] h-[33px] flex items-center justify-center tracking-tight cursor-pointer relative z-10">
+            {/* Post button */}
+            <button
+              onClick={handlePost}
+              className="bg-gradient-to-r from-[#9000ff] to-[#ffc300] rounded-[5px] border-none text-white text-[1.1rem] font-semibold w-[90px] h-[33px] flex items-center justify-center tracking-tight cursor-pointer relative z-10"
+            >
               Post
             </button>
           </div>
@@ -48,6 +75,4 @@ const UploadModal: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default UploadModal;
+}
