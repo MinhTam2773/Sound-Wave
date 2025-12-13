@@ -1,40 +1,228 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { X, Image, Music, Video, Plus } from "lucide-react";
+import { MediaFile } from "@/types/post/types";
+import { uploadPost } from "@/server-actions/post/actions";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/auth";
+import { useRouter } from "next/navigation";
 
-interface UploadModalProps {
-  onPost: (text: string) => void;
-}
+export default function UploadModal() {
+  const supabase = createClient();
+  const router = useRouter();
 
-export default function UploadModal({ onPost }: UploadModalProps) {
+  const { profile, user } = useAuth();
   const [text, setText] = useState("");
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handlePost = () => {
-    onPost(text); // send text to LandingPage
-    setText(""); // clear textarea
+  const handlePost = async () => {
+    if (!text.trim() && mediaFiles.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      if (!user) throw new Error();
+      const postId = await uploadPost(user?.id, text);
+      await uploadMedia(postId);
+
+      router.refresh();
+
+      setText("");
+      setMediaFiles([]);
+      // Clean up preview URLs
+      mediaFiles.forEach((mf) => URL.revokeObjectURL(mf.previewUrl));
+    } catch (error) {
+      console.error("Failed to post:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const uploadMedia = async (postId: string) => {
+    if (mediaFiles.length > 0) {
+      const mediaPromises = mediaFiles.map(async (file, index) => {
+        const fileType = file.type.startsWith("image")
+          ? "image"
+          : file.type.startsWith("video")
+          ? "video"
+          : "audio";
+
+        const filePath = `post-media/${postId}/${fileType}/${Date.now()}-${
+          file.name
+        }`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from("post-media")
+          .upload(filePath, file.file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("post-media").getPublicUrl(filePath);
+
+        // Create media record
+        return {
+          post_id: postId,
+          media_url: publicUrl,
+          media_type: fileType,
+          order_index: index,
+          mime_type: file.type,
+          file_size: file.size,
+        };
+      });
+
+      const mediaRecords = await Promise.all(mediaPromises);
+
+      await supabase.from("post_media").insert(mediaRecords);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    const newMediaFiles = files.map((file) => {
+      const type = file.type.startsWith("image/")
+        ? "image"
+        : file.type.startsWith("video/")
+        ? "video"
+        : "audio";
+
+      return {
+        id: Math.random().toString(36).substring(7),
+        file,
+        previewUrl: type === "image" ? URL.createObjectURL(file) : "",
+        type,
+        name: file.name,
+      };
+    });
+
+    setMediaFiles((prev) => [...prev, ...newMediaFiles] as MediaFile[]);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeMedia = (id: string) => {
+    setMediaFiles((prev) => {
+      const fileToRemove = prev.find((mf) => mf.id === id);
+      if (fileToRemove?.previewUrl) {
+        URL.revokeObjectURL(fileToRemove.previewUrl);
+      }
+      return prev.filter((mf) => mf.id !== id);
+    });
+  };
+
+  const handleMediaButtonClick = () => {
+    fileInputRef.current?.click();
   };
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "0px"; // reset height
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // expand
+      textareaRef.current.style.height = "0px";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [text]);
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      mediaFiles.forEach((mf) => {
+        if (mf.previewUrl) {
+          URL.revokeObjectURL(mf.previewUrl);
+        }
+      });
+    };
+  }, []);
 
   return (
     <div className="relative bg-[#323232] rounded-[10px] border-[0.5px] border-[#776f6f] w-full p-[25px_16px_10px_16px] flex flex-col gap-[10px] min-h-[127px] overflow-hidden">
       {/* Gradient border background */}
       <div className="absolute inset-0 rounded-[10px] p-[1px]">
-        <div className="absolute inset-0 rounded-[10px] bg-gradient-to-r from-[#9000ff] to-[#ffc300]" />
+        <div className="absolute inset-0 rounded-[10px] bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300]" />
         <div className="absolute inset-[1px] rounded-[10px] bg-[#323232]" />
       </div>
 
       <div className="relative z-10 flex flex-row items-start gap-[25px] w-full">
         {/* Avatar */}
-        <div className="w-[47px] h-[47px] rounded-full bg-white flex-shrink-0" />
+        <img
+          src={profile?.pfp_url}
+          alt="user pfp"
+          className="w-[47px] h-[47px] rounded-full flex-shrink-0"
+        />
 
         <div className="flex flex-col gap-[10px] w-[calc(100%-47px-25px)]">
+          {/* Media Preview Grid */}
+          {mediaFiles.length > 0 && (
+            <div className="mb-3">
+              <div className="flex flex-wrap gap-2">
+                {mediaFiles.map((media) => (
+                  <div
+                    key={media.id}
+                    className="relative group w-20 h-20 rounded-lg overflow-hidden border border-[#776f6f]"
+                  >
+                    {media.type === "image" && (
+                      <img
+                        src={media.previewUrl}
+                        alt={media.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+
+                    {media.type === "video" && (
+                      <div className="w-full h-full  flex items-center justify-center">
+                        <Video className="text-white" size={32} />
+                        <div className="absolute bottom-1 left-1 text-xs text-white  px-1 rounded">
+                          Video
+                        </div>
+                      </div>
+                    )}
+
+                    {media.type === "audio" && (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-900 to-cyan-700 flex items-center justify-center">
+                        <Music className="text-white" size={32} />
+                        <div className="absolute bottom-1 left-1 text-xs text-white bg-black/50 px-1 rounded">
+                          Audio
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Remove button */}
+                    <button
+                      onClick={() => removeMedia(media.id)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={14} className="text-white" />
+                    </button>
+
+                    {/* File name overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                      <p className="text-xs text-white truncate">
+                        {media.name}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add more button */}
+                <button
+                  onClick={handleMediaButtonClick}
+                  className="w-20 h-20 rounded-lg border-2 border-dashed border-[#9000ff] flex flex-col items-center justify-center text-[#9000ff] hover:bg-[#9000ff]/10 transition-colors"
+                >
+                  <Plus size={24} />
+                  <span className="text-xs mt-1">Add</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Input area */}
           <div className="relative flex flex-row items-center bg-none rounded-[5px] border-[0.5px] border-[#776f6f] p-0 w-full">
             <div className="absolute inset-0 rounded-[5px] p-[1px]">
@@ -47,32 +235,96 @@ export default function UploadModal({ onPost }: UploadModalProps) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="What's on your mind?"
-              className="relative z-10 w-full bg-transparent resize-none overflow-hidden outline-none text-[#fff] placeholder:text-[#776f6f] px-[10px] py-[10px] text-[1.1rem] font-normal"
+              className="relative z-10 w-full bg-transparent resize-none overflow-hidden outline-none text-[#fff] placeholder:text-[#776f6f] px-[10px] py-[10px] text-[1.1rem] font-normal min-h-[80px]"
             />
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-row items-center justify-between w-full gap-[97px]">
-            <div className="flex flex-row items-center gap-[25px]">
-              {/* Icons (pictures/music) */}
-              <img
-                className="w-[25px] h-[35px] bg-[#333] rounded-[4px] object-cover"
-                src="https://s3-alpha-sig.figma.com/img/356e/0ccf/322966846a25c5362ed24e842af29722?Expires=1766361600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=KixWVqTsieLm95kzAd2CDsDEm6ks4WcB~Wq3zuwk98vei4~Pfy~1~7TNu6xowf~ilzSVLenYxPrCJJvqNnjJ02CRVIHfryYXGhv~FH8F0upuwMm3nqgsMMxVdwDVyBlvoHxHmV1fF40jLNin37jgto9cdh61muG~N6HZMUKquN7I5LHrIt2pR8Wfc-fC8qaLO3LSUVCdIzcudlxjgPRYyql519FxWjdEGfljCqtOKVF2Yl9Jo7JSwgjhpeTEOV2Zh5~uv77USb9QaNBYXN-TYsgNV5JgQ1gwU8IMufMvKaC7VnH8hkIow6wPIAM15NRzEtXUQZWUmtdHBM2RE67m0Q__"
-                alt="Picture"
+          <div className="flex flex-row items-center justify-between w-full">
+            <div className="flex flex-row items-center gap-[15px]">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                multiple
+                accept="image/*,video/*,audio/*"
+                className="hidden"
               />
-              <img
-                className="w-[25px] h-[25px] bg-[#333] rounded-[4px] object-cover"
-                src="https://s3-alpha-sig.figma.com/img/a270/e67b/8ff8e175062c35ebb1afe8fa17608ac6?Expires=1766361600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=kD6A8bhuI~x7eG~AcT3qgJxRJTAFNf4WTaeUVQxnL-MDEAw6FAsD9Vao1pmdxJ~Orb20LMXq1q6G4qV5ehozIJ4IjN8Lh-rDZw2eBYqwsggkTuQpxMeMsPDYnJlbrh6ZTgtVWs9F9Y4ibvdqBkFWmK8F6DjC1rzSyiMravWbG7OZWSjSZHhK34hISv9O378-53oiSCRfJFOOr0qDF8y97oUEhdQ9ePVehFJjRsc3xazIT6QyD5n3ZEOD1klXSsqyMR25DMEqhxDjqOUhpAFRak0HIg2tnW4-8N0OFy1tjdZMaRWW~Hj4GiLa0cTEiQyrUEqB4F6B3xWK0OwZ0E1~GQ__"
-                alt="Music"
-              />
+
+              {/* Media upload buttons */}
+              <button
+                onClick={handleMediaButtonClick}
+                className="flex items-center gap-2 p-[5px] rounded-full bg-gradient-to-r  border border-[#dcb2fc] text-white hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                <Plus size={18} />
+              </button>
+
+              {/* Media count badge */}
+              {mediaFiles.length > 0 && (
+                <div className="flex items-center gap-2 text-sm text-white/70">
+                  <div className="flex gap-1">
+                    {mediaFiles.reduce((acc, media) => {
+                      acc[media.type] = (acc[media.type] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>)["image"] > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Image size={16} />
+                        <span>
+                          {mediaFiles.filter((m) => m.type === "image").length}
+                        </span>
+                      </div>
+                    )}
+                    {mediaFiles.reduce((acc, media) => {
+                      acc[media.type] = (acc[media.type] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>)["video"] > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Video size={16} />
+                        <span>
+                          {mediaFiles.filter((m) => m.type === "video").length}
+                        </span>
+                      </div>
+                    )}
+                    {mediaFiles.reduce((acc, media) => {
+                      acc[media.type] = (acc[media.type] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>)["audio"] > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Music size={16} />
+                        <span>
+                          {mediaFiles.filter((m) => m.type === "audio").length}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Post button */}
             <button
               onClick={handlePost}
-              className="bg-gradient-to-r from-[#9000ff] to-[#ffc300] rounded-[5px] border-none text-white text-[1.1rem] font-semibold w-[90px] h-[33px] flex items-center justify-center tracking-tight cursor-pointer relative z-10"
+              disabled={
+                (!text.trim() && mediaFiles.length === 0) || isUploading
+              }
+              className={`
+                relative z-10 bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300] 
+                rounded-[5px] border-none text-white text-[1.1rem] font-semibold 
+                w-[90px] h-[33px] flex items-center justify-center tracking-tight 
+                ${
+                  (!text.trim() && mediaFiles.length === 0) || isUploading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer hover:opacity-90"
+                }
+                transition-all
+              `}
             >
-              Post
+              {isUploading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                "Post"
+              )}
             </button>
           </div>
         </div>
