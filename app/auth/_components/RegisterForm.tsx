@@ -7,24 +7,35 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 
 // Zod schema for form validation
-const registerSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be less than 20 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+const registerSchema = z
+  .object({
+    email: z.string().email("Please enter a valid email address"),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username must be less than 20 characters")
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "Username can only contain letters, numbers, and underscores"
+      ),
+    displayName: z
+      .string()
+      .min(2, "Display name must be at least 2 characters")
+      .max(50, "Display name must be less than 50 characters")
+      .optional()
+      .or(z.literal("")),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -60,6 +71,7 @@ export default function RegisterForm() {
         options: {
           data: {
             username: data.username,
+            displayName: data.displayName,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -90,22 +102,29 @@ export default function RegisterForm() {
       // }
 
       // console.log("Registration successful:", authData);
-      
+
       // Show success message and redirect
-      alert("Registration successful! Please check your email to confirm your account.");
+      alert(
+        "Registration successful! Please check your email to confirm your account."
+      );
       // router.push("/auth/login");
       // router.refresh();
-      
     } catch (error: any) {
       console.error("Registration error:", error);
-      
+
       // Handle specific Supabase errors
       if (error.message?.includes("User already registered")) {
-        setServerError("This email is already registered. Please use a different email or sign in.");
+        setServerError(
+          "This email is already registered. Please use a different email or sign in."
+        );
       } else if (error.message?.includes("password")) {
-        setServerError("Password does not meet requirements. Please ensure it meets all criteria.");
+        setServerError(
+          "Password does not meet requirements. Please ensure it meets all criteria."
+        );
       } else {
-        setServerError(error.message || "Registration failed. Please try again.");
+        setServerError(
+          error.message || "Registration failed. Please try again."
+        );
       }
     } finally {
       setLoading(false);
@@ -141,9 +160,7 @@ export default function RegisterForm() {
         >
           {/* Email */}
           <div className="flex flex-col gap-[6px]">
-            <label className="text-md font-medium text-black">
-              Email
-            </label>
+            <label className="text-md font-medium text-black">Email</label>
             <div className="relative">
               <input
                 type="email"
@@ -158,20 +175,20 @@ export default function RegisterForm() {
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
           </div>
 
           {/* Username */}
           <div className="flex flex-col gap-[6px]">
-            <label className="text-md font-medium text-black">
-              Username
-            </label>
+            <label className="text-md font-medium text-black">Username</label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="yourusername"
+                placeholder="your username"
                 autoComplete="username"
                 className={`w-full py-2 rounded-md border px-3 focus:outline-none transition ${
                   errors.username
@@ -182,16 +199,40 @@ export default function RegisterForm() {
                 {...register("username")}
               />
               {errors.username && (
-                <p className="text-red-500 text-sm mt-1">{errors.username.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.username.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="flex flex-col gap-[6px]">
+            <label className="text-md font-medium text-black">Display Name</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="your display name"
+                autoComplete="displayName"
+                className={`w-full py-2 rounded-md border px-3 focus:outline-none transition ${
+                  errors.displayName
+                    ? "border-red-500 focus:border-red-500"
+                    : "border-[#d9d9d9] focus:border-[#9100ff]"
+                }`}
+                disabled={loading}
+                {...register("displayName")}
+              />
+              {errors.displayName && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.displayName?.message}
+                </p>
               )}
             </div>
           </div>
 
           {/* Password */}
           <div className="flex flex-col gap-[6px]">
-            <label className="font-medium text-black">
-              Password
-            </label>
+            <label className="font-medium text-black">Password</label>
             <div className="relative">
               <input
                 type="password"
@@ -206,16 +247,16 @@ export default function RegisterForm() {
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </div>
 
           {/* Confirm Password */}
           <div className="flex flex-col gap-[6px]">
-            <label className=" font-medium text-black">
-              Confirm Password
-            </label>
+            <label className=" font-medium text-black">Confirm Password</label>
             <div className="relative">
               <input
                 type="password"
@@ -230,7 +271,9 @@ export default function RegisterForm() {
                 {...register("confirmPassword")}
               />
               {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
           </div>
