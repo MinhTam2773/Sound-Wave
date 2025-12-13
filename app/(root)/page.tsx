@@ -1,45 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
-import UploadModal from "@/components/post/upload/UploadModal";
-import TextPost from "@/components/post/text/text";
-import ImagePost from "@/components/post/image/image";
-import AudioPost from "@/components/post/audio/audio";
-import MusicPost from "@/components/post/music/music";
+import React, { useRef } from "react";
+import { MusicPlayer } from "@/components/musicplayer/MusicPlayer";
 
+const musicPosts = [
+  {
+    title: "Chill Vibes",
+    artist: "LoFi Beats",
+    audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+  },
+  {
+    title: "Upbeat Energy",
+    artist: "Synth Pop",
+    audioSrc: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  },
+];
 
-export default function LandingPage() {
-  const [posts, setPosts] = useState<string[]>([]);
-
-  // Function to handle new post from UploadModal
-  const handleNewPost = (text: string) => {
-    if (text.trim() === "") return;
-    setPosts([text, ...posts]); // add new post to the top
-  };
+const MusicPage: React.FC = () => {
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   return (
-    <main className="w-full h-screen overflow-y-scroll bg-[#232323] flex flex-col items-center p-0">
-      <div className="w-[709px] max-w-full flex flex-col gap-[20px] mx-auto p-0">
-        {/* Header */}
-        <div className="flex flex-row items-center h-[54px] w-full gap-[10px] bg-none border-none p-0">
-          <div className="text-[2rem] font-bold text-white h-[54px] flex items-center tracking-tight ml-0">
-            Home
+    <main className="w-full h-screen bg-[#232323] flex flex-col">
+      <div className="w-full h-full overflow-y-auto snap-y snap-mandatory flex flex-col items-center">
+        <div className="snap-start flex justify-start w-full h-screen px-6 items-center">
+          <h1 className="text-white text-4xl font-bold">Music</h1>
+        </div>
+
+        {musicPosts.map((post, index) => (
+          <div
+            key={index}
+            className="snap-start flex justify-center items-center w-full h-screen py-10"
+          >
+            <MusicPlayer {...post} currentAudioRef={currentAudioRef} />
           </div>
-        </div>
+        ))}
 
-        {/* Upload Modal */}
-        <UploadModal onPost={handleNewPost} />
-
-        {/* Posts */}
-        <div className="flex flex-col gap-[20px] w-full">
-          {posts.map((text, index) => (
-            <TextPost key={index} text={text} />
-          ))}
-          <ImagePost />
-          <AudioPost />
-          <MusicPost />
-        </div>
+        <div className="h-[200vh]" />
       </div>
     </main>
   );
-}
+};
+
+export default MusicPage;
