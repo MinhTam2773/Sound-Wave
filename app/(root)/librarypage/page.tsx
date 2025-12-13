@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
-interface MusicPost {
+interface Post {
+  type: "audio" | "image" | "post";
   title: string;
-  artist: string;
-  audioSrc: string;
+  artist?: string;
+  audioSrc?: string;
   thumbnail: string;
-  isSaved: boolean; // only show if saved
+  isSaved: boolean;
 }
 
-const savedMusicPosts: MusicPost[] = [
+const savedPosts: Post[] = [
   {
+    type: "audio",
     title: "Chill Vibes",
     artist: "LoFi Beats",
     audioSrc: "/audio/chill-lofi.mp3",
@@ -19,26 +21,42 @@ const savedMusicPosts: MusicPost[] = [
     isSaved: true,
   },
   {
-    title: "Upbeat Energy",
-    artist: "Synth Pop",
-    audioSrc: "/audio/upbeat.mp3",
-    thumbnail: "/images/upbeat.jpg",
-    isSaved: false,
-  },
-  {
+    type: "audio",
     title: "Relaxing Piano",
     artist: "Calm Keys",
     audioSrc: "/audio/piano.mp3",
     thumbnail: "/images/piano.jpg",
     isSaved: true,
   },
+  {
+    type: "image",
+    title: "Sunset Vibes",
+    thumbnail: "/images/sunset.jpg",
+    isSaved: true,
+  },
+  {
+    type: "post",
+    title: "Daily Inspiration",
+    thumbnail: "/images/inspiration.jpg",
+    isSaved: true,
+  },
 ];
 
-const LibraryPage: React.FC = () => {
-  const savedPosts = savedMusicPosts.filter((post) => post.isSaved);
+const filterOptions = ["all", "audio", "image", "post"] as const;
 
+const LibraryPage: React.FC = () => {
+  const [filter, setFilter] = useState<typeof filterOptions[number]>("all");
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const audioRefs = useRef<(HTMLAudioElement | null)[]>([]);
+  const [indicatorPosition, setIndicatorPosition] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    const optionWidth = containerWidth / filterOptions.length;
+    setIndicatorPosition(optionWidth * filterOptions.indexOf(filter));
+  }, [filter]);
 
   const togglePlay = (index: number) => {
     const currentAudio = audioRefs.current[index];
@@ -56,43 +74,122 @@ const LibraryPage: React.FC = () => {
     }
   };
 
-  if (savedPosts.length === 0) {
-    return (
-      <main className="w-full min-h-screen bg-[#232323] flex flex-col items-center p-6 gap-6">
-        <h1 className="text-white text-3xl font-bold">Library</h1>
-        <p className="text-gray-400">You haven’t saved any posts yet.</p>
-      </main>
-    );
-  }
+  const categories = ["audio", "image", "post"] as const;
+  const getPostsByType = (type: typeof categories[number]) =>
+    savedPosts.filter((post) => post.isSaved && post.type === type);
 
   return (
-    <main className="w-full min-h-screen bg-[#232323] flex flex-col items-center p-6 gap-6">
-      <h1 className="text-white text-3xl font-bold">Library</h1>
-      <div className="w-full max-w-3xl flex flex-col gap-6">
-        {savedPosts.map((post, index) => (
-          <div
-            key={index}
-            className="bg-[#1e1e1e] rounded-xl p-4 flex flex-col gap-3 shadow-md"
+    <main className="w-full min-h-screen bg-[#232323] flex flex-col items-center p-4 gap-6">
+      <h1 className="text-white text-3xl font-bold">Saved Posts</h1>
+
+      {/* Filter Slider */}
+      <div
+        ref={containerRef}
+        className="relative w-full max-w-3xl h-9 bg-[#1e1e1e] rounded-full flex items-center justify-between px-1 select-none"
+      >
+        <div
+          className="absolute top-0 left-0 h-[34px] rounded-full transition-all duration-300"
+          style={{
+            width: `${100 / filterOptions.length}%`,
+            transform: `translateX(${indicatorPosition}px)`,
+            background: "linear-gradient(90deg, #9100ff, #b23caf, #ffc300)",
+          }}
+        />
+        {filterOptions.map((option) => (
+          <button
+            key={option}
+            className={`flex-1 z-10 h-full flex items-center justify-center font-medium cursor-pointer text-sm transition-colors ${
+              filter === option ? "text-white" : "text-gray-400"
+            }`}
+            onClick={() => setFilter(option)}
           >
-            <img
-              src={post.thumbnail}
-              alt={post.title}
-              className="w-full h-48 object-cover rounded-lg"
-            />
-            <div className="flex flex-col">
-              <h2 className="text-white text-lg font-semibold">{post.title}</h2>
-              <p className="text-gray-400 text-sm">{post.artist}</p>
-            </div>
-            <audio ref={(el) => (audioRefs.current[index] = el)} src={post.audioSrc} />
-            <button
-              onClick={() => togglePlay(index)}
-              className="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors"
-            >
-              {playingIndex === index ? "Pause" : "Play"}
-            </button>
-          </div>
+            {option.charAt(0).toUpperCase() + option.slice(1)}
+          </button>
         ))}
       </div>
+
+      {/* Posts */}
+      {filter === "all"
+        ? categories.map((cat) => {
+            const posts = getPostsByType(cat);
+            if (posts.length === 0) return null;
+
+            return (
+              <section key={cat} className="w-full max-w-3xl">
+                <h2 className="text-white text-xl font-semibold mb-3 capitalize border-b border-gray-700 pb-1">
+                  {cat}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {posts.map((post, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                    >
+                      <img
+                        src={post.thumbnail}
+                        alt={post.title}
+                        className="w-full h-40 object-cover"
+                      />
+                      <div className="p-3 flex flex-col gap-1">
+                        <h3 className="text-white text-md font-semibold">{post.title}</h3>
+                        {post.artist && <p className="text-gray-400 text-xs">{post.artist}</p>}
+                        {post.type === "audio" && post.audioSrc && (
+                          <>
+                            <audio
+                              ref={(el) => (audioRefs.current[index] = el)}
+                              src={post.audioSrc}
+                            />
+                            <button
+                              onClick={() => togglePlay(index)}
+                              className="mt-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm transition-colors"
+                            >
+                              {playingIndex === index ? "Pause" : "Play"}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })
+        : (
+          <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {savedPosts
+              .filter((post) => post.isSaved && post.type === filter)
+              .map((post, index) => (
+                <div
+                  key={index}
+                  className="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
+                >
+                  <img
+                    src={post.thumbnail}
+                    alt={post.title}
+                    className="w-full h-40 object-cover"
+                  />
+                  <div className="p-3 flex flex-col gap-1">
+                    <h3 className="text-white text-md font-semibold">{post.title}</h3>
+                    {post.artist && <p className="text-gray-400 text-xs">{post.artist}</p>}
+                    {post.type === "audio" && post.audioSrc && (
+                      <>
+                        <audio
+                          ref={(el) => (audioRefs.current[index] = el)}
+                          src={post.audioSrc}
+                        />
+                        <button
+                          onClick={() => togglePlay(index)}
+                          className="mt-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm transition-colors"
+                        >
+                          {playingIndex === index ? "Pause" : "Play"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
     </main>
   );
 };
