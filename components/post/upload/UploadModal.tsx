@@ -1,21 +1,18 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Image, Music, Video, FileText, Plus } from "lucide-react";
+import { X, Image, Music, Video, Plus } from "lucide-react";
+import { MediaFile } from "@/types/post/types";
+import { uploadPost } from "@/server-actions/post/actions";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/auth";
+import { useRouter } from "next/navigation";
 
-interface MediaFile {
-  id: string;
-  file: File;
-  previewUrl: string;
-  type: 'image' | 'video' | 'audio';
-  name: string;
-}
+export default function UploadModal() {
+  const supabase = createClient();
+  const router = useRouter();
 
-interface UploadModalProps {
-  onPost: (text: string, mediaFiles: File[]) => void;
-}
-
-export default function UploadModal({ onPost }: UploadModalProps) {
+  const { profile, user } = useAuth();
   const [text, setText] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -24,15 +21,19 @@ export default function UploadModal({ onPost }: UploadModalProps) {
 
   const handlePost = async () => {
     if (!text.trim() && mediaFiles.length === 0) return;
-    
+
     setIsUploading(true);
     try {
-      const files = mediaFiles.map(mf => mf.file);
-      await onPost(text, files);
+      if (!user) throw new Error();
+      const postId = await uploadPost(user?.id, text);
+      await uploadMedia(postId);
+
+      router.refresh();
+
       setText("");
       setMediaFiles([]);
       // Clean up preview URLs
-      mediaFiles.forEach(mf => URL.revokeObjectURL(mf.previewUrl));
+      mediaFiles.forEach((mf) => URL.revokeObjectURL(mf.previewUrl));
     } catch (error) {
       console.error("Failed to post:", error);
     } finally {
@@ -40,52 +41,87 @@ export default function UploadModal({ onPost }: UploadModalProps) {
     }
   };
 
+  const uploadMedia = async (postId: string) => {
+    if (mediaFiles.length > 0) {
+      const mediaPromises = mediaFiles.map(async (file, index) => {
+        const fileType = file.type.startsWith("image")
+          ? "image"
+          : file.type.startsWith("video")
+          ? "video"
+          : "audio";
+
+        const filePath = `post-media/${postId}/${fileType}/${Date.now()}-${
+          file.name
+        }`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from("post-media")
+          .upload(filePath, file.file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("post-media").getPublicUrl(filePath);
+
+        // Create media record
+        return {
+          post_id: postId,
+          media_url: publicUrl,
+          media_type: fileType,
+          order_index: index,
+          mime_type: file.type,
+          file_size: file.size,
+        };
+      });
+
+      const mediaRecords = await Promise.all(mediaPromises);
+
+      await supabase.from("post_media").insert(mediaRecords);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
-    const newMediaFiles = files.map(file => {
-      const type = file.type.startsWith('image/') ? 'image' : 
-                   file.type.startsWith('video/') ? 'video' : 
-                   'audio';
-      
+
+    const newMediaFiles = files.map((file) => {
+      const type = file.type.startsWith("image/")
+        ? "image"
+        : file.type.startsWith("video/")
+        ? "video"
+        : "audio";
+
       return {
         id: Math.random().toString(36).substring(7),
         file,
-        previewUrl: type === 'image' ? URL.createObjectURL(file) : '',
+        previewUrl: type === "image" ? URL.createObjectURL(file) : "",
         type,
-        name: file.name
+        name: file.name,
       };
     });
-    
-    setMediaFiles(prev => [...prev, ...newMediaFiles] as MediaFile[]);
-    
+
+    setMediaFiles((prev) => [...prev, ...newMediaFiles] as MediaFile[]);
+
     // Reset file input
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const removeMedia = (id: string) => {
-    setMediaFiles(prev => {
-      const fileToRemove = prev.find(mf => mf.id === id);
+    setMediaFiles((prev) => {
+      const fileToRemove = prev.find((mf) => mf.id === id);
       if (fileToRemove?.previewUrl) {
         URL.revokeObjectURL(fileToRemove.previewUrl);
       }
-      return prev.filter(mf => mf.id !== id);
+      return prev.filter((mf) => mf.id !== id);
     });
   };
 
   const handleMediaButtonClick = () => {
     fileInputRef.current?.click();
-  };
-
-  const getMediaIcon = (type: 'image' | 'video' | 'audio') => {
-    switch (type) {
-      case 'image': return <Image size={20} />;
-      case 'video': return <Video size={20} />;
-      case 'audio': return <Music size={20} />;
-      default: return <FileText size={20} />;
-    }
   };
 
   useEffect(() => {
@@ -98,7 +134,7 @@ export default function UploadModal({ onPost }: UploadModalProps) {
   // Cleanup preview URLs on unmount
   useEffect(() => {
     return () => {
-      mediaFiles.forEach(mf => {
+      mediaFiles.forEach((mf) => {
         if (mf.previewUrl) {
           URL.revokeObjectURL(mf.previewUrl);
         }
@@ -116,7 +152,11 @@ export default function UploadModal({ onPost }: UploadModalProps) {
 
       <div className="relative z-10 flex flex-row items-start gap-[25px] w-full">
         {/* Avatar */}
-        <div className="w-[47px] h-[47px] rounded-full bg-white flex-shrink-0" />
+        <img
+          src={profile?.pfp_url}
+          alt="user pfp"
+          className="w-[47px] h-[47px] rounded-full flex-shrink-0"
+        />
 
         <div className="flex flex-col gap-[10px] w-[calc(100%-47px-25px)]">
           {/* Media Preview Grid */}
@@ -124,28 +164,28 @@ export default function UploadModal({ onPost }: UploadModalProps) {
             <div className="mb-3">
               <div className="flex flex-wrap gap-2">
                 {mediaFiles.map((media) => (
-                  <div 
-                    key={media.id} 
+                  <div
+                    key={media.id}
                     className="relative group w-20 h-20 rounded-lg overflow-hidden border border-[#776f6f]"
                   >
-                    {media.type === 'image' && (
+                    {media.type === "image" && (
                       <img
                         src={media.previewUrl}
                         alt={media.name}
                         className="w-full h-full object-cover"
                       />
                     )}
-                    
-                    {media.type === 'video' && (
-                      <div className="w-full h-full bg-gradient-to-br from-purple-900 to-pink-700 flex items-center justify-center">
+
+                    {media.type === "video" && (
+                      <div className="w-full h-full  flex items-center justify-center">
                         <Video className="text-white" size={32} />
-                        <div className="absolute bottom-1 left-1 text-xs text-white bg-black/50 px-1 rounded">
+                        <div className="absolute bottom-1 left-1 text-xs text-white  px-1 rounded">
                           Video
                         </div>
                       </div>
                     )}
-                    
-                    {media.type === 'audio' && (
+
+                    {media.type === "audio" && (
                       <div className="w-full h-full bg-gradient-to-br from-blue-900 to-cyan-700 flex items-center justify-center">
                         <Music className="text-white" size={32} />
                         <div className="absolute bottom-1 left-1 text-xs text-white bg-black/50 px-1 rounded">
@@ -153,7 +193,7 @@ export default function UploadModal({ onPost }: UploadModalProps) {
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Remove button */}
                     <button
                       onClick={() => removeMedia(media.id)}
@@ -161,14 +201,16 @@ export default function UploadModal({ onPost }: UploadModalProps) {
                     >
                       <X size={14} className="text-white" />
                     </button>
-                    
+
                     {/* File name overlay */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1">
-                      <p className="text-xs text-white truncate">{media.name}</p>
+                      <p className="text-xs text-white truncate">
+                        {media.name}
+                      </p>
                     </div>
                   </div>
                 ))}
-                
+
                 {/* Add more button */}
                 <button
                   onClick={handleMediaButtonClick}
@@ -209,7 +251,7 @@ export default function UploadModal({ onPost }: UploadModalProps) {
                 accept="image/*,video/*,audio/*"
                 className="hidden"
               />
-              
+
               {/* Media upload buttons */}
               <button
                 onClick={handleMediaButtonClick}
@@ -217,7 +259,7 @@ export default function UploadModal({ onPost }: UploadModalProps) {
               >
                 <Plus size={18} />
               </button>
-              
+
               {/* Media count badge */}
               {mediaFiles.length > 0 && (
                 <div className="flex items-center gap-2 text-sm text-white/70">
@@ -225,28 +267,34 @@ export default function UploadModal({ onPost }: UploadModalProps) {
                     {mediaFiles.reduce((acc, media) => {
                       acc[media.type] = (acc[media.type] || 0) + 1;
                       return acc;
-                    }, {} as Record<string, number>)['image'] > 0 && (
+                    }, {} as Record<string, number>)["image"] > 0 && (
                       <div className="flex items-center gap-1">
                         <Image size={16} />
-                        <span>{mediaFiles.filter(m => m.type === 'image').length}</span>
+                        <span>
+                          {mediaFiles.filter((m) => m.type === "image").length}
+                        </span>
                       </div>
                     )}
                     {mediaFiles.reduce((acc, media) => {
                       acc[media.type] = (acc[media.type] || 0) + 1;
                       return acc;
-                    }, {} as Record<string, number>)['video'] > 0 && (
+                    }, {} as Record<string, number>)["video"] > 0 && (
                       <div className="flex items-center gap-1">
                         <Video size={16} />
-                        <span>{mediaFiles.filter(m => m.type === 'video').length}</span>
+                        <span>
+                          {mediaFiles.filter((m) => m.type === "video").length}
+                        </span>
                       </div>
                     )}
                     {mediaFiles.reduce((acc, media) => {
                       acc[media.type] = (acc[media.type] || 0) + 1;
                       return acc;
-                    }, {} as Record<string, number>)['audio'] > 0 && (
+                    }, {} as Record<string, number>)["audio"] > 0 && (
                       <div className="flex items-center gap-1">
                         <Music size={16} />
-                        <span>{mediaFiles.filter(m => m.type === 'audio').length}</span>
+                        <span>
+                          {mediaFiles.filter((m) => m.type === "audio").length}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -257,19 +305,25 @@ export default function UploadModal({ onPost }: UploadModalProps) {
             {/* Post button */}
             <button
               onClick={handlePost}
-              disabled={(!text.trim() && mediaFiles.length === 0) || isUploading}
+              disabled={
+                (!text.trim() && mediaFiles.length === 0) || isUploading
+              }
               className={`
                 relative z-10 bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300] 
                 rounded-[5px] border-none text-white text-[1.1rem] font-semibold 
                 w-[90px] h-[33px] flex items-center justify-center tracking-tight 
-                ${(!text.trim() && mediaFiles.length === 0) || isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-90'}
+                ${
+                  (!text.trim() && mediaFiles.length === 0) || isUploading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "cursor-pointer hover:opacity-90"
+                }
                 transition-all
               `}
             >
               {isUploading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                'Post'
+                "Post"
               )}
             </button>
           </div>
