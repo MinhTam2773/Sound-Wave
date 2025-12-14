@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, X } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { Play, Pause, SkipBack, SkipForward, X, Volume2 } from "lucide-react";
 import { useMusicPlayerStore } from "@/store/useMusicPlayerStore";
 
 export const BottomMusicBar: React.FC = () => {
@@ -9,6 +9,9 @@ export const BottomMusicBar: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState("0:00");
   const [duration, setDuration] = useState("0:00");
+  const [volume, setVolume] = useState(1); // 0 to 1
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -16,12 +19,12 @@ export const BottomMusicBar: React.FC = () => {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  // Update progress and time
+  // Update progress while audio is playing
   useEffect(() => {
     if (!audioRef) return;
 
     const handleTimeUpdate = () => {
-      if (!audioRef) return;
+      if (!audioRef || isDragging) return;
       const current = audioRef.currentTime;
       const total = audioRef.duration || 0;
       setProgress((current / (total || 1)) * 100);
@@ -30,10 +33,13 @@ export const BottomMusicBar: React.FC = () => {
     };
 
     audioRef.addEventListener("timeupdate", handleTimeUpdate);
-    return () => {
-      audioRef.removeEventListener("timeupdate", handleTimeUpdate);
-    };
-  }, [audioRef]);
+    return () => audioRef.removeEventListener("timeupdate", handleTimeUpdate);
+  }, [audioRef, isDragging]);
+
+  // Update volume
+  useEffect(() => {
+    if (audioRef) audioRef.volume = volume;
+  }, [volume, audioRef]);
 
   if (!activeId) return null;
 
@@ -55,12 +61,28 @@ export const BottomMusicBar: React.FC = () => {
   };
 
   const removeBar = () => {
-    stop(); // stops and hides bar
+    stop();
   };
+
+  // Drag handlers for progress
+  const handleSeek = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!audioRef || !progressRef.current) return;
+    const rect = progressRef.current.getBoundingClientRect();
+    const clientX = "clientX" in e ? e.clientX : e.touches[0].clientX;
+    let newProgress = ((clientX - rect.left) / rect.width) * 100;
+    newProgress = Math.max(0, Math.min(100, newProgress));
+    const newTime = (audioRef.duration || 0) * (newProgress / 100);
+    audioRef.currentTime = newTime;
+    setProgress(newProgress);
+    setCurrentTime(formatTime(newTime));
+  };
+
+  const startDrag = () => setIsDragging(true);
+  const stopDrag = () => setIsDragging(false);
 
   return (
     <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-[540px] bg-[#2c2c2c] rounded-2xl shadow-xl p-3 flex flex-col gap-2 z-50">
-      
+
       {/* Remove button */}
       <div className="flex justify-end">
         <button onClick={removeBar} className="text-gray-400 hover:text-white">
@@ -70,13 +92,11 @@ export const BottomMusicBar: React.FC = () => {
 
       {/* Controls + Track info */}
       <div className="flex items-center justify-between">
-        {/* Track info */}
         <div className="flex flex-col overflow-hidden">
           <span className="text-white font-semibold truncate">Now Playing</span>
           <span className="text-gray-400 text-sm truncate">Artist</span>
         </div>
 
-        {/* Playback controls */}
         <div className="flex items-center gap-4">
           <button onClick={resetAudio} className="p-2 hover:bg-gray-700 rounded-full">
             <SkipBack className="w-5 h-5 text-white" />
@@ -92,11 +112,35 @@ export const BottomMusicBar: React.FC = () => {
           <button onClick={endAudio} className="p-2 hover:bg-gray-700 rounded-full">
             <SkipForward className="w-5 h-5 text-white" />
           </button>
+
+          {/* Volume slider */}
+          <div className="flex items-center gap-1">
+            <Volume2 className="w-4 h-4 text-white" />
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-20 h-1 accent-[#9000ff] cursor-pointer"
+            />
+          </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-1 bg-gray-600 rounded-full overflow-hidden mt-1">
+      <div
+        ref={progressRef}
+        className="w-full h-1 bg-gray-600 rounded-full overflow-hidden mt-1 relative cursor-pointer"
+        onMouseDown={(e) => { startDrag(); handleSeek(e); }}
+        onMouseMove={(e) => isDragging && handleSeek(e)}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
+        onTouchStart={(e) => { startDrag(); handleSeek(e); }}
+        onTouchMove={(e) => isDragging && handleSeek(e)}
+        onTouchEnd={stopDrag}
+      >
         <div
           className="h-full bg-gradient-to-r from-[#9000ff] to-[#ffc300]"
           style={{ width: `${progress}%` }}
