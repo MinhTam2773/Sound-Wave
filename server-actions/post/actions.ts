@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 // const getAuthenticatedSupabaseClient = async (userId: string) => {
 //     const supabase = await createClient();
@@ -64,3 +65,42 @@ export const getPosts = async () => {
     console.error("Unexpected error happened", e);
   }
 };
+
+
+export const editPost = async (postId: string, new_caption: string) => {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("posts")
+      .update({ caption: new_caption })
+      .eq("id", postId)
+      .select();
+
+    if (error) throw error;
+  } catch(error) {
+    console.error(error);
+    throw error;
+  }
+  revalidatePath("/");
+};
+
+export const deletePost = async (postId: string) => {
+  try {
+    const supabase = await createClient();
+
+    const { error: storageError } = await supabase.storage.from("post-media").remove([`post-media/${postId}`]);
+    if (storageError) throw storageError;
+
+    const {error: postMediaError} = await supabase.from("post_media").delete().eq('post_id', postId);
+
+    if (postMediaError) throw postMediaError;
+
+    const {error: postError} = await supabase.from("posts").delete().eq('id', postId);
+
+    if (postError) throw postError;
+  } catch(error) {
+    console.error(error);
+  }
+  revalidatePath('/');
+}

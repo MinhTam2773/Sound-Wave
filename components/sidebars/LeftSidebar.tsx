@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/auth";
 import NotificationsOverlay from "./NotificationsOverlay"; // make sure the filename matches
 
 const LeftSidebar = () => {
-  const {profile, user} = useAuth();
+  const {profile} = useAuth();
   const pathname = usePathname();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -69,7 +69,7 @@ const LeftSidebar = () => {
                       key={link.name}
                       href={link.href}
                       className={`flex items-center gap-[10px] w-full min-h-[45px] rounded-[10px] p-0 pl-[15px] transition-colors ${
-                        pathname === link.href ? "bg-gradient-to-r from-[#9000ff] to-[#ffc300]" : "hover:bg-white/10"
+                        pathname === link.href ? "bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300]" : "hover:bg-white/10"
                       }`}
                     >
                       <img

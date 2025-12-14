@@ -1,59 +1,85 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { Play, Pause, Heart, MessageCircle, Repeat, Send, Bookmark } from "lucide-react";
-import { useRouter } from "next/navigation"; // dynamic routing
-
-interface MediaItem {
-  id: string;
-  media_url: string;
-  media_type: "image" | "video" | "audio";
-  order_index: number;
-}
-
-interface PostData {
-  id: string | null;
-  author_id: string | null;
-  caption: string | null;
-  likes_count: number | null;
-  comments_count: number| null;
-  reposts_count: number| null;
-  shares_count: number| null;
-  created_at: string | null;
-  media: MediaItem[] | null;
-  author: {
-    username: string| null;
-    display_name?: string| null;
-    pfp_url?: string| null;
-  };
-  original_post?: PostData| null; // For reposts
-  is_repost: boolean | null;
-}
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Play,
+  Pause,
+  Heart,
+  MessageCircle,
+  Repeat,
+  Send,
+  Bookmark,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Flag,
+  Copy,
+  Link,
+} from "lucide-react";
+import { useAuth } from "@/hooks/auth";
+import { deletePost, editPost } from "@/server-actions/post/actions";
+import { PostData } from "@/types/post/types";
+import { toast } from "sonner";
 
 interface UniversalPostProps {
   post: PostData;
 }
 
 export default function Post({ post }: UniversalPostProps) {
-  //router
-  const router = useRouter();
+  const { user } = useAuth();
   // Show the reposted content if this is a repost
-  const displayPost = post.is_repost && post.original_post ? post.original_post : post;
+  const displayPost =
+    post.is_repost && post.original_post ? post.original_post : post;
   const displayMedia = displayPost.media || [];
 
   // State
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedCaption, setEditedCaption] = useState(displayPost.caption || "");
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Close options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        optionsRef.current &&
+        !optionsRef.current.contains(event.target as Node)
+      ) {
+        setIsOptionsOpen(false);
+      }
+    };
+
+    if (isOptionsOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOptionsOpen]);
+
+  // Auto-resize textarea when editing
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      editTextareaRef.current.style.height = "auto";
+      editTextareaRef.current.style.height = `${editTextareaRef.current.scrollHeight}px`;
+    }
+  }, [editedCaption, isEditing]);
 
   // Format time
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+    const diffHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffHours < 1) return "Just now";
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${Math.floor(diffHours / 24)}d ago`;
@@ -92,6 +118,66 @@ export default function Post({ post }: UniversalPostProps) {
     setIsSaved(!isSaved);
   };
 
+  // Copy post link
+  const handleCopyLink = async () => {
+    const postUrl = `${window.location.origin}/post/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(postUrl);
+      alert("Link copied to clipboard!");
+      setIsOptionsOpen(false);
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+    }
+  };
+
+  // Start editing
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setEditedCaption(displayPost.caption || "");
+    setIsOptionsOpen(false);
+  };
+
+  // Save edit
+  const handleSaveEdit = async () => {
+    if (!editedCaption.trim()) {
+      alert("Caption cannot be empty");
+      return;
+    }
+
+    try {
+      await editPost(post.id, editedCaption);
+
+      toast("Post is edited");
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to edit post:", error);
+      alert("Failed to save changes");
+    }
+  };
+
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedCaption(displayPost.caption || "");
+  };
+
+  // Delete post
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this post?")) {
+      return;
+    }
+
+    try {
+      await deletePost(post.id);
+
+      toast("post deleted successfully");
+      setIsOptionsOpen(false);
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      alert("Failed to delete post");
+    }
+  };
+
   // Determine post type
   const getPostType = () => {
     if (!displayMedia.length) return "text";
@@ -100,6 +186,7 @@ export default function Post({ post }: UniversalPostProps) {
   };
 
   const postType = getPostType();
+  const isOwner = user?.id === displayPost.author_id;
 
   // Render media based on type
   const renderMedia = () => {
@@ -140,7 +227,7 @@ export default function Post({ post }: UniversalPostProps) {
 
     // Single media
     const media = displayMedia[0];
-    
+
     if (media.media_type === "image") {
       return (
         <img
@@ -159,17 +246,8 @@ export default function Post({ post }: UniversalPostProps) {
             src={media.media_url}
             className="w-full max-h-[500px] rounded-lg"
             onClick={togglePlay}
+            controls
           />
-          <button
-            onClick={togglePlay}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-black/50 rounded-full flex items-center justify-center hover:bg-black/70"
-          >
-            {isPlaying ? (
-              <Pause className="w-8 h-8 text-white" />
-            ) : (
-              <Play className="w-8 h-8 text-white ml-1" />
-            )}
-          </button>
         </div>
       );
     }
@@ -221,22 +299,21 @@ export default function Post({ post }: UniversalPostProps) {
   };
 
   return (
-    <div className="bg-[#323232] rounded-[15px] border border-[#776f6f] p-4 mb-4">
+    <div className="bg-[#323232] rounded-[15px] border border-[#776f6f] p-4 mb-4 relative">
       {/* Repost header */}
       {post.is_repost && post.author && (
         <div className="flex items-center gap-2 text-sm text-white/60 mb-2">
           <Repeat className="w-4 h-4" />
-          <span>{post.author.display_name || post.author.username} reposted</span>
+          <span>
+            {post.author.display_name || post.author.username} reposted
+          </span>
         </div>
       )}
 
       {/* User info */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div 
-            className="w-12 h-12 rounded-full flex-shrink-0 cursor-pointer"
-            onClick={() => router.push(`/profile/${displayPost.author?.username}`)}
-          >
+          <div className="w-12 h-12 rounded-full bg-white flex-shrink-0">
             {displayPost.author?.pfp_url && (
               <img
                 src={displayPost.author.pfp_url}
@@ -245,14 +322,15 @@ export default function Post({ post }: UniversalPostProps) {
               />
             )}
           </div>
-          
-          {/* Alex added this*/}
-          <div className="cursor-pointer" onClick={() => router.push(`/profile/${displayPost.author?.username}`)}>
+          <div>
             <div className="text-white font-semibold">
-              {displayPost.author?.display_name || displayPost.author?.username || "User"}
+              {displayPost.author?.display_name ||
+                displayPost.author?.username ||
+                "User"}
             </div>
             <div className="text-white/60 text-sm">
-              @{displayPost.author?.username} · {formatTime(displayPost.created_at as string)}
+              @{displayPost.author?.username} ·{" "}
+              {formatTime(displayPost.created_at)}
             </div>
           </div>
         </div>
@@ -260,19 +338,122 @@ export default function Post({ post }: UniversalPostProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            className={`p-2 rounded-lg ${isSaved ? "text-yellow-400" : "text-white/60"}`}
+            className={`p-2 rounded-lg transition-colors ${
+              isSaved
+                ? "text-yellow-400 bg-yellow-400/10"
+                : "text-white/60 hover:bg-white/10"
+            }`}
           >
-            <Bookmark className="w-5 h-5" fill={isSaved ? "currentColor" : "none"} />
+            <Bookmark
+              className="w-5 h-5"
+              fill={isSaved ? "currentColor" : "none"}
+            />
           </button>
-          <button className="p-2 text-white/60 rounded-lg">
-            <span className="text-lg">⋯</span>
-          </button>
+
+          {/* Options button */}
+          <div className="relative" ref={optionsRef}>
+            <button
+              onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+              className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+
+            {/* Options dropdown */}
+            {isOptionsOpen && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-[#424242] rounded-lg shadow-lg border border-white/10 z-50 py-2">
+                {isOwner ? (
+                  <>
+                    <button
+                      onClick={handleEditClick}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-white/80 hover:bg-white/10 transition-colors text-left"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      <span>Edit post</span>
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-400/10 transition-colors text-left"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete post</span>
+                    </button>
+                    <div className="h-px bg-white/10 my-2" />
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setIsOptionsOpen(false);
+                      // Report functionality
+                      alert("Report feature coming soon!");
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-white/80 hover:bg-white/10 transition-colors text-left"
+                  >
+                    <Flag className="w-4 h-4" />
+                    <span>Report post</span>
+                  </button>
+                )}
+
+                {/* Shared options */}
+                <button
+                  onClick={handleCopyLink}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-white/80 hover:bg-white/10 transition-colors text-left"
+                >
+                  <Link className="w-4 h-4" />
+                  <span>Copy link</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsOptionsOpen(false);
+                    // Copy post text
+                    if (displayPost.caption) {
+                      navigator.clipboard.writeText(displayPost.caption);
+                      alert("Caption copied!");
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-white/80 hover:bg-white/10 transition-colors text-left"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Copy text</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Caption */}
-      {displayPost.caption && (
-        <div className="text-white mb-3">{displayPost.caption}</div>
+      {/* Caption or Edit mode */}
+      {isEditing ? (
+        <div className="mb-3">
+          <textarea
+            ref={editTextareaRef}
+            value={editedCaption}
+            onChange={(e) => setEditedCaption(e.target.value)}
+            className="w-full bg-transparent text-white border border-white/20 rounded-lg p-3 resize-none min-h-[100px] focus:outline-none focus:border-white/40"
+            placeholder="What's on your mind?"
+            autoFocus
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <button
+              onClick={handleCancelEdit}
+              className="px-4 py-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveEdit}
+              className="px-4 py-2 bg-gradient-to-r from-[#9000ff] to-[#ffc300] text-white rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      ) : (
+        displayPost.caption && (
+          <div className="text-white mb-3 whitespace-pre-line">
+            {displayPost.caption}
+          </div>
+        )
       )}
 
       {/* Media */}
@@ -282,23 +463,27 @@ export default function Post({ post }: UniversalPostProps) {
       <div className="flex justify-between mt-4 pt-4 border-t border-white/10">
         <button
           onClick={handleLike}
-          className={`flex items-center gap-2 ${isLiked ? "text-red-400" : "text-white/70"}`}
+          className={`flex items-center gap-2 transition-colors ${
+            isLiked
+              ? "text-red-400 hover:text-red-300"
+              : "text-white/70 hover:text-white"
+          }`}
         >
           <Heart className="w-6 h-6" fill={isLiked ? "currentColor" : "none"} />
           <span className="text-sm">Like</span>
         </button>
 
-        <button className="flex items-center gap-2 text-white/70">
+        <button className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
           <MessageCircle className="w-6 h-6" />
           <span className="text-sm">Comment</span>
         </button>
 
-        <button className="flex items-center gap-2 text-white/70">
+        <button className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
           <Repeat className="w-6 h-6" />
           <span className="text-sm">Repost</span>
         </button>
 
-        <button className="flex items-center gap-2 text-white/70">
+        <button className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
           <Send className="w-6 h-6" />
           <span className="text-sm">Share</span>
         </button>

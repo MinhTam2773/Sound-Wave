@@ -2,8 +2,16 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { logout } from "@/server-actions/auth/actions";
+import { toast } from "sonner";
+import { redirect } from "next/navigation";
 
 const SettingsPage: React.FC = () => {
+  const handleLogout = async () => {
+    await logout();
+    toast("Logout successfully")
+    redirect("/auth/login")
+  }
   const sections = [
     {
       title: "Customization",
@@ -85,7 +93,7 @@ const SettingsPage: React.FC = () => {
         <div className="mt-6 w-[650px]">
           <Button
             className="bg-red-600 hover:bg-red-700 text-white w-full"
-            disabled
+            onClick={handleLogout}
           >
             Logout
           </Button>
