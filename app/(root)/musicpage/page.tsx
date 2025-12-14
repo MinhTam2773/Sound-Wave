@@ -1,3 +1,5 @@
+//app/(root)/musicpage/page.tsx
+
 "use client";
 
 import React from "react";

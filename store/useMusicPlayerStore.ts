@@ -1,41 +1,29 @@
 import { create } from "zustand";
 
-type MusicPlayerStore = {
+interface MusicPlayerState {
   activeId: string | null;
-  audio: HTMLAudioElement | null;
   isPlaying: boolean;
-
-  play: (id: string, audio: HTMLAudioElement) => void;
+  audioRef: HTMLAudioElement | null;
+  play: (id: string, ref: HTMLAudioElement) => void;
   pause: () => void;
-};
+}
 
-export const useMusicPlayerStore = create<MusicPlayerStore>((set, get) => ({
+export const useMusicPlayerStore = create<MusicPlayerState>((set, get) => ({
   activeId: null,
-  audio: null,
   isPlaying: false,
-
-  play: async (id, audio) => {
-    const { audio: currentAudio } = get();
-
-    // Stop any currently playing audio
-    if (currentAudio && currentAudio !== audio) {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
+  audioRef: null,
+  play: (id, ref) => {
+    // Pause old audio if exists
+    if (get().audioRef && get().audioRef !== ref) {
+      get().audioRef.pause();
     }
 
-    await audio.play();
+    ref.play().catch(() => {});
 
-    set({
-      activeId: id,
-      audio,
-      isPlaying: true,
-    });
+    set({ activeId: id, isPlaying: true, audioRef: ref });
   },
-
   pause: () => {
-    const { audio } = get();
-    if (audio) audio.pause();
-
+    if (get().audioRef) get().audioRef.pause();
     set({ isPlaying: false });
   },
 }));

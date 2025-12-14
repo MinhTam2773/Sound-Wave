@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { Play, Pause, Heart, MessageCircle, Repeat, Send, Bookmark } from "lucide-react";
+import { useRouter } from "next/navigation"; // dynamic routing
 
 interface MediaItem {
   id: string;
@@ -34,6 +35,8 @@ interface UniversalPostProps {
 }
 
 export default function Post({ post }: UniversalPostProps) {
+  //router
+  const router = useRouter();
   // Show the reposted content if this is a repost
   const displayPost = post.is_repost && post.original_post ? post.original_post : post;
   const displayMedia = displayPost.media || [];
@@ -230,7 +233,10 @@ export default function Post({ post }: UniversalPostProps) {
       {/* User info */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-white flex-shrink-0">
+          <div 
+            className="w-12 h-12 rounded-full flex-shrink-0 cursor-pointer"
+            onClick={() => router.push(`/profile/${displayPost.author?.username}`)}
+          >
             {displayPost.author?.pfp_url && (
               <img
                 src={displayPost.author.pfp_url}
@@ -239,7 +245,9 @@ export default function Post({ post }: UniversalPostProps) {
               />
             )}
           </div>
-          <div>
+          
+          {/* Alex added this*/}
+          <div className="cursor-pointer" onClick={() => router.push(`/profile/${displayPost.author?.username}`)}>
             <div className="text-white font-semibold">
               {displayPost.author?.display_name || displayPost.author?.username || "User"}
             </div>
