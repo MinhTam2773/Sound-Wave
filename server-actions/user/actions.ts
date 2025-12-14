@@ -3,10 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { UserProfile } from "@/types/auth/types";
 
-export const getUserByUsername = async (username: string): Promise<UserProfile | null> => {
+export const getUserByUsername = async (
+  username: string
+): Promise<UserProfile | null> => {
   const supabase = await createClient();
-console.log(username);
   try {
+    console.log("USERNAME: " +username);
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -14,7 +16,8 @@ console.log(username);
       .single();
 
     if (error) {
-      console.error("Error fetching user:", error);
+      console.log("USERNAME: " +username)
+      console.log("Error fetching user:", error.message);
       return null;
     }
 

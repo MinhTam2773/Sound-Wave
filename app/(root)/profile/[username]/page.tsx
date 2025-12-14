@@ -12,10 +12,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = await createClient();
 
   try {
+    console.log("USERNAME:" +username.replace("%20"," "));
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .eq("username", username) // 🔹 filter by username
+      .eq("username", decodeURIComponent(username)) // 🔹 filter by username
       .single();
 
     if (error || !data) {
