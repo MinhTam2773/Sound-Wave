@@ -1,50 +1,25 @@
-// "use client";
+import React from "react";
+import { getUserByUsername, getPostsByUserId } from "@/server-actions/user/actions";
+import ProfileClient from "./ProfileClient";
+import { UserProfile } from "@/types/auth/types";
 
-// import { useEffect, useState } from "react";
-// import { useRouter } from "next/navigation";
-// import { createClient } from "@/lib/supabase/client";
-// import { UserProfile } from "@/types/auth/types";
+interface ProfilePageProps {
+  params: Promise<{ username: string }>; // <- params is a Promise now
+}
 
-// interface ProfilePageProps {
-//   params: { username: string };
-// }
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { username } = await params; // <- await the params
+  const user: UserProfile | null = await getUserByUsername(username);
 
-// export default function ProfilePage({ params }: ProfilePageProps) {
-//   const { username } = params;
-//   const supabase = createClient();
-//   const [profile, setProfile] = useState<UserProfile | null>(null);
-//   const [loading, setLoading] = useState(true);
+  if (!user) {
+    return (
+      <main className="w-full min-h-screen flex items-center justify-center text-white">
+        <p>User not found</p>
+      </main>
+    );
+  }
 
-//   useEffect(() => {
-//     const fetchProfile = async () => {
-//       const { data, error } = await supabase
-//         .from("users")
-//         .select("*")
-//         .eq("username", username)
-//         .single();
+  const posts = await getPostsByUserId(user.id);
 
-//       if (error) {
-//         console.error(error.message);
-//         setProfile(null);
-//       } else {
-//         setProfile(data as UserProfile);
-//       }
-
-//       setLoading(false);
-//     };
-
-//     fetchProfile();
-//   }, [username]);
-
-//   if (loading) return <div>Loading...</div>;
-//   if (!profile) return <div>User not found</div>;
-
-//   return (
-//     <div className="text-white p-4">
-//       <h1 className="text-2xl font-bold">{profile.display_name || profile.username}</h1>
-//       <p className="text-white/70">@{profile.username}</p>
-//       <p className="mt-2">{profile.bio}</p>
-//       {/* Render posts, followers, etc. */}
-//     </div>
-//   );
-// }
+  return <ProfileClient user={user} posts={posts} />;
+}
