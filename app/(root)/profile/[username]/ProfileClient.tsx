@@ -1,9 +1,8 @@
-// app/(root)/profile/[username]/ProfileClient.tsx
 "use client";
 
 import React, { useState } from "react";
-import { UserProfile } from "@/types/auth/types";
 
+// Hardcoded posts example
 interface Post {
   type: "audio" | "image" | "post";
   title: string;
@@ -11,19 +10,29 @@ interface Post {
   artist?: string;
 }
 
-interface ProfileClientProps {
-  user: UserProfile;
-  posts: Post[];
-}
-
-// Hardcoded fallback posts if needed
 const mockPosts: Post[] = [
   { type: "audio", title: "Chill Vibes", artist: "LoFi Beats", thumbnail: "/images/chill-lofi.jpg" },
   { type: "image", title: "Sunset Vibes", thumbnail: "/images/sunset.jpg" },
   { type: "post", title: "Daily Inspiration", thumbnail: "/images/inspiration.jpg" },
 ];
 
-export default function ProfileClient({ user, posts }: ProfileClientProps) {
+export type UserProfile = {
+  id: string;
+  email: string;
+  username: string;
+  display_name: string | null;
+  pfp_url: string | null;
+  bio: string | null;
+  provider: string;
+  email_verified: boolean;
+  created_at: string;
+};
+
+interface ProfileClientProps {
+  user: UserProfile;
+}
+
+export default function ProfileClient({ user }: ProfileClientProps) {
   const [activeTab, setActiveTab] = useState<"Posts" | "Saved" | "Likes">("Posts");
 
   return (
@@ -31,11 +40,11 @@ export default function ProfileClient({ user, posts }: ProfileClientProps) {
       {/* Profile Header */}
       <div className="w-full max-w-4xl flex flex-col items-center gap-4">
         <div className="flex flex-col items-center gap-2">
-          <img
-            src={typeof user.pfp_url === "string" ? user.pfp_url : "/images/default-avatar.jpg"}
-            alt="user pfp"
-            className="w-24 h-24 rounded-full"
-          />
+          <div
+            className="w-24 h-24 rounded-full bg-gray-700 flex items-center justify-center text-white text-2xl"
+          >
+            {user.username.charAt(0).toUpperCase()}
+          </div>
           <p className="text-white font-bold">@{user.username}</p>
           <h1 className="text-white text-2xl font-bold">{user.display_name || user.username}</h1>
           <p className="text-gray-400 text-sm">{user.bio || "Music Enthusiast"}</p>
@@ -59,9 +68,9 @@ export default function ProfileClient({ user, posts }: ProfileClientProps) {
         ))}
       </div>
 
-      {/* Posts */}
+      {/* Content */}
       <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {(posts.length > 0 ? posts : mockPosts).map((post, index) => (
+        {mockPosts.map((post, index) => (
           <div
             key={index}
             className="bg-[#1e1e1e] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"

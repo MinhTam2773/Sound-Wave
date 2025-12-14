@@ -1,25 +1,33 @@
 import React from "react";
-import { getUserByUsername, getPostsByUserId } from "@/server-actions/user/actions";
-import ProfileClient from "./ProfileClient";
-import { UserProfile } from "@/types/auth/types";
+import { createClient } from "@/lib/supabase/server";
+import ProfileClient, { UserProfile } from "./ProfileClient";
 
 interface ProfilePageProps {
-  params: Promise<{ username: string }>; // <- params is a Promise now
+  params: { username: string };
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {
-  const { username } = await params; // <- await the params
-  const user: UserProfile | null = await getUserByUsername(username);
+  const username = (await params).username
 
-  if (!user) {
-    return (
-      <main className="w-full min-h-screen flex items-center justify-center text-white">
-        <p>User not found</p>
-      </main>
-    );
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("username", username) // 🔹 filter by username
+      .single();
+
+    if (error || !data) {
+      console.error("Error fetching user:", error);
+      return <div className="text-white">User not found</div>;
+    }
+
+    const user: UserProfile = data;
+
+    return <ProfileClient user={user} />;
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return <div className="text-white">Something went wrong</div>;
   }
-
-  const posts = await getPostsByUserId(user.id);
-
-  return <ProfileClient user={user} posts={posts} />;
 }
