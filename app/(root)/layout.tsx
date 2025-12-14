@@ -8,7 +8,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex w-full h-screen">
+    <main className="flex w-full h-screen bg-[#232323]">
       {/* Left Sidebar */}
       <div className="w-[250px] flex-shrink-0">
         <LeftSidebar />

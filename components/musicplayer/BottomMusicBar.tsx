@@ -19,10 +19,8 @@ export const BottomMusicBar: React.FC = () => {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  // Update progress while audio is playing
   useEffect(() => {
     if (!audioRef) return;
-
     const handleTimeUpdate = () => {
       if (!audioRef || isDragging) return;
       const current = audioRef.currentTime;
@@ -31,12 +29,10 @@ export const BottomMusicBar: React.FC = () => {
       setCurrentTime(formatTime(current));
       setDuration(formatTime(total));
     };
-
     audioRef.addEventListener("timeupdate", handleTimeUpdate);
     return () => audioRef.removeEventListener("timeupdate", handleTimeUpdate);
   }, [audioRef, isDragging]);
 
-  // Update volume
   useEffect(() => {
     if (audioRef) audioRef.volume = volume;
   }, [volume, audioRef]);
@@ -60,11 +56,8 @@ export const BottomMusicBar: React.FC = () => {
     pause();
   };
 
-  const removeBar = () => {
-    stop();
-  };
+  const removeBar = () => stop();
 
-  // Drag handlers for progress
   const handleSeek = (e: React.MouseEvent | React.TouchEvent) => {
     if (!audioRef || !progressRef.current) return;
     const rect = progressRef.current.getBoundingClientRect();
@@ -81,8 +74,17 @@ export const BottomMusicBar: React.FC = () => {
   const stopDrag = () => setIsDragging(false);
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-[540px] bg-[#2c2c2c] rounded-2xl shadow-xl p-3 flex flex-col gap-2 z-50">
-
+    <div
+      className={`
+        fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-[540px]
+        bg-[#2c2c2c] rounded-2xl p-3 flex flex-col gap-2 z-50
+        border-2 border-transparent transition-all duration-300
+        ${isPlaying ? "border-gradient-to-r from-[#9000ff] to-[#ffc300]" : ""}
+        hover:border-gradient-to-r hover:from-[#9000ff] hover:to-[#ffc300]`}
+      style={{
+        borderImage: "linear-gradient(to right, #9000ff, #ffc300) 1",
+      }}
+    >
       {/* Remove button */}
       <div className="flex justify-end">
         <button onClick={removeBar} className="text-gray-400 hover:text-white">
@@ -113,7 +115,7 @@ export const BottomMusicBar: React.FC = () => {
             <SkipForward className="w-5 h-5 text-white" />
           </button>
 
-          {/* Volume slider */}
+          {/* Volume */}
           <div className="flex items-center gap-1">
             <Volume2 className="w-4 h-4 text-white" />
             <input
