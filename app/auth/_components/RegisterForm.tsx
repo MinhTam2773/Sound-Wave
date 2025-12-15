@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { signUp } from "@/server-actions/auth/actions";
+import { createClient } from "@/lib/supabase/client";
 
 // Zod schema for form validation
 const registerSchema = z
@@ -41,6 +41,8 @@ const registerSchema = z
 export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
+  const supabase = createClient();
+
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -64,13 +66,22 @@ export default function RegisterForm() {
     setServerError(null);
 
     try {
-      const success = await signUp(data,`${window.location.origin}/auth/callback`);
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            username: data.username,
+            display_name: data.displayName,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
 
-      if (success) {
-        toast(
-          "Registration successful! Please check your email to confirm your account."
-        );
-      }
+      toast(
+        "Registration successful! Please check your email to confirm your account."
+      );
     } catch (error) {
       console.error("Registration error:", error);
     } finally {

@@ -7,8 +7,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { login, loginWithOAuth } from "@/server-actions/auth/actions";
+import { login } from "@/server-actions/auth/actions";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 // Zod schema for form validation
 const loginSchema = z.object({
@@ -19,6 +20,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
+  const supabase = createClient();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -46,7 +48,7 @@ const LoginForm = () => {
       const success = await login(data.email, data.password);
 
       if (success) {
-        router.push('/');
+        router.push("/");
         toast("Login successfully");
       }
     } catch (error) {
@@ -62,7 +64,16 @@ const LoginForm = () => {
     setError(null);
 
     try {
-      await loginWithOAuth("google", `${window.location.origin}/auth/callback`);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       console.error("Google login error:", error);
       setError("Google login failed.");
@@ -75,7 +86,16 @@ const LoginForm = () => {
     setError(null);
 
     try {
-      await loginWithOAuth("facebook", `${window.location.origin}/auth/callback`);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "facebook",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       console.error("Facebook login error:", error);
       setError("Facebook login failed.");
@@ -112,9 +132,7 @@ const LoginForm = () => {
         >
           {/* Email */}
           <div className="flex flex-col gap-[6px]">
-            <label className=" font-medium text-black">
-              Email
-            </label>
+            <label className=" font-medium text-black">Email</label>
             <div className="relative">
               <input
                 type="email"
@@ -129,16 +147,16 @@ const LoginForm = () => {
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
               )}
             </div>
           </div>
 
           {/* Password */}
           <div className="flex flex-col gap-[6px]">
-            <label className=" font-medium text-black">
-              Password
-            </label>
+            <label className=" font-medium text-black">Password</label>
             <div className="relative">
               <input
                 type="password"
@@ -153,15 +171,15 @@ const LoginForm = () => {
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </div>
 
           {/* Forgot password */}
-          <div
-            className="text-[15px] text-[#6b6b6b] text-right cursor-pointer hover:text-[#9100ff] transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <div className="text-[15px] text-[#6b6b6b] text-right cursor-pointer hover:text-[#9100ff] transition disabled:opacity-50 disabled:cursor-not-allowed">
             Forgot Password?
           </div>
 
