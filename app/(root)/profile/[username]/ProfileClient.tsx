@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { UserProfile } from "@/types/auth/types";
+import React, { useState } from "react";
 
 // -----------------------------
 // Types
@@ -11,18 +12,6 @@ interface Post {
   thumbnail: string;
   artist?: string;
 }
-
-export type UserProfile = {
-  id: string;
-  email: string;
-  username: string;
-  display_name: string | null;
-  pfp_url: string | null;
-  bio: string | null;
-  provider: string;
-  email_verified: boolean;
-  created_at: string;
-};
 
 interface ProfileClientProps {
   user: UserProfile;

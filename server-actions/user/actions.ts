@@ -9,7 +9,6 @@ export const getUserByUsername = async (
 ): Promise<UserProfile | null> => {
   const supabase = await createClient();
   try {
-    console.log("USERNAME: " +username);
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -17,7 +16,6 @@ export const getUserByUsername = async (
       .single();
 
     if (error) {
-      console.log("USERNAME: " +username)
       console.log("Error fetching user:", error.message);
       return null;
     }

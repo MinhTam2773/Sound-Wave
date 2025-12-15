@@ -16,7 +16,6 @@ import {
   Copy,
   Link as Linkicon
 } from "lucide-react";
-import { useAuth } from "@/hooks/auth";
 import { deletePost, editPost } from "@/server-actions/post/actions";
 import { PostData } from "@/types/post/types";
 import { toast } from "sonner";
@@ -25,7 +24,7 @@ import { UserProfile } from "@/types/auth/types";
 
 interface UniversalPostProps {
   post: PostData;
-  user: UserProfile;
+  user: UserProfile | null;
 }
 
 export default function Post({ post, user }: UniversalPostProps) {

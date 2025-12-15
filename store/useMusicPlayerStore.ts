@@ -15,17 +15,17 @@ export const useMusicPlayerStore = create<MusicPlayerState>((set, get) => ({
   audioRef: null,
   play: (id, ref) => {
     if (get().audioRef && get().audioRef !== ref) {
-      get().audioRef.pause();
+      get().audioRef?.pause();
     }
     ref.play().catch(() => {});
     set({ activeId: id, isPlaying: true, audioRef: ref });
   },
   pause: () => {
-    if (get().audioRef) get().audioRef.pause();
+    if (get().audioRef) get().audioRef?.pause();
     set({ isPlaying: false });
   },
   stop: () => {
-    if (get().audioRef) get().audioRef.pause();
+    if (get().audioRef) get().audioRef?.pause();
     set({ activeId: null, isPlaying: false, audioRef: null });
   },
 }));

@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { UserProfile } from "@/types/auth/types";
 import { toast } from "sonner";
 
-export default function UploadModal({user} : {user: UserProfile}) {
+export default function UploadModal({user} : {user: UserProfile | null}) {
   const supabase = createClient();
   const router = useRouter();
 

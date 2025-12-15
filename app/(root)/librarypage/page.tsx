@@ -135,10 +135,10 @@ const LibraryPage: React.FC = () => {
                         {post.artist && <p className="text-gray-400 text-xs">{post.artist}</p>}
                         {post.type === "audio" && post.audioSrc && (
                           <>
-                            <audio
+                            {/* <audio
                               ref={(el) => (audioRefs.current[index] = el)}
                               src={post.audioSrc}
-                            />
+                            /> */}
                             <button
                               onClick={() => togglePlay(index)}
                               className="mt-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm transition-colors"
@@ -173,10 +173,10 @@ const LibraryPage: React.FC = () => {
                     {post.artist && <p className="text-gray-400 text-xs">{post.artist}</p>}
                     {post.type === "audio" && post.audioSrc && (
                       <>
-                        <audio
+                        {/* <audio
                           ref={(el) => (audioRefs.current[index] = el)}
                           src={post.audioSrc}
-                        />
+                        /> */}
                         <button
                           onClick={() => togglePlay(index)}
                           className="mt-1 bg-purple-600 hover:bg-purple-700 text-white py-1 rounded-lg text-sm transition-colors"

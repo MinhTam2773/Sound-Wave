@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { XIcon } from "lucide-react";
 
 interface NotificationsOverlayProps {
@@ -12,23 +12,12 @@ const NotificationsOverlay: React.FC<NotificationsOverlayProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [visible, setVisible] = useState(isOpen);
-
-  // Mount the component when opening
-  useEffect(() => {
-    if (isOpen) setVisible(true);
-  }, [isOpen]);
-
-  // Unmount after slide-out animation
-  const handleTransitionEnd = () => {
-    if (!isOpen) setVisible(false);
-  };
-
-  if (!visible) return null;
+  // Don't render anything if not open
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex">
-      {/* Dark backdrop */}
+      {/* Dark backdrop with transition */}
       <div
         className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0"
@@ -36,12 +25,11 @@ const NotificationsOverlay: React.FC<NotificationsOverlayProps> = ({
         onClick={onClose}
       />
 
-      {/* Sliding panel */}
+      {/* Sliding panel with transition */}
       <div
         className={`relative bg-[#1F1F1F] w-[350px] h-full p-6 shadow-2xl rounded-r-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-        onTransitionEnd={handleTransitionEnd}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
