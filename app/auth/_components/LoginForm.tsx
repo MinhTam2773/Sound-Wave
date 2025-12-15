@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
-import { createClient } from "@/lib/supabase/client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
+import { login, loginWithOAuth } from "@/server-actions/auth/actions";
+import { toast } from "sonner";
 
 // Zod schema for form validation
 const loginSchema = z.object({
@@ -18,8 +19,8 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
-  const supabase = createClient();
   const router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,46 +43,17 @@ const LoginForm = () => {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const success = await login(data.email, data.password);
 
-      if (error) {
-        throw error;
+      if (success) {
+        router.push('/');
+        toast("Login successfully");
       }
-
-      // Login successful - redirect to dashboard or home page
-      console.log("Login successful");
-      router.push("/"); // Or your desired redirect path
-      router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error);
-      setError(error.message || "Login failed. Please check your credentials.");
+      setError("Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    // Get the email from form state if available
-    const email = document.querySelector<HTMLInputElement>("input[name='email']")?.value;
-    
-    if (!email) {
-      setError("Please enter your email address first.");
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
-
-      if (error) throw error;
-
-      alert("Password reset email sent! Check your inbox.");
-    } catch (error: any) {
-      setError(error.message || "Failed to send reset email.");
     }
   };
 
@@ -90,17 +62,10 @@ const LoginForm = () => {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
+      await loginWithOAuth("google", `${window.location.origin}/auth/callback`);
+    } catch (error) {
       console.error("Google login error:", error);
-      setError(error.message || "Google login failed.");
+      setError("Google login failed.");
       setLoading(false);
     }
   };
@@ -110,17 +75,10 @@ const LoginForm = () => {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "facebook",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
+      await loginWithOAuth("facebook", `${window.location.origin}/auth/callback`);
+    } catch (error) {
       console.error("Facebook login error:", error);
-      setError(error.message || "Facebook login failed.");
+      setError("Facebook login failed.");
       setLoading(false);
     }
   };
@@ -202,7 +160,6 @@ const LoginForm = () => {
 
           {/* Forgot password */}
           <div
-            onClick={handleForgotPassword}
             className="text-[15px] text-[#6b6b6b] text-right cursor-pointer hover:text-[#9100ff] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Forgot Password?

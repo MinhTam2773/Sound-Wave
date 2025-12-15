@@ -12,18 +12,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const supabase = await createClient();
 
   try {
-    console.log("USERNAME:" +username.replace("%20"," "));
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .eq("username", decodeURIComponent(username)) // 🔹 filter by username
+      .eq("username", decodeURIComponent(username))
       .single();
 
     if (error || !data) {
       console.error("Error fetching user:", error);
       return <div className="text-white">User not found</div>;
     }
-
+    
     const user: UserProfile = data;
 
     return <ProfileClient user={user} />;

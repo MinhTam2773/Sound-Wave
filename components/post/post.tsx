@@ -14,19 +14,21 @@ import {
   Trash2,
   Flag,
   Copy,
-  Link,
+  Link as Linkicon
 } from "lucide-react";
 import { useAuth } from "@/hooks/auth";
 import { deletePost, editPost } from "@/server-actions/post/actions";
 import { PostData } from "@/types/post/types";
 import { toast } from "sonner";
+import Link from "next/link";
+import { UserProfile } from "@/types/auth/types";
 
 interface UniversalPostProps {
   post: PostData;
+  user: UserProfile;
 }
 
-export default function Post({ post }: UniversalPostProps) {
-  const { user } = useAuth();
+export default function Post({ post, user }: UniversalPostProps) {
   // Show the reposted content if this is a repost
   const displayPost =
     post.is_repost && post.original_post ? post.original_post : post;
@@ -312,28 +314,28 @@ export default function Post({ post }: UniversalPostProps) {
 
       {/* User info */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-white flex-shrink-0">
-            {displayPost.author?.pfp_url && (
-              <img
-                src={displayPost.author.pfp_url}
-                alt=""
-                className="w-full h-full rounded-full object-cover"
-              />
-            )}
-          </div>
-          <div>
-            <div className="text-white font-semibold">
-              {displayPost.author?.display_name ||
-                displayPost.author?.username ||
-                "User"}
+        <Link href={`/profile/${displayPost.author.username}`}>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full flex-shrink-0">
+                <img
+                  src={displayPost.author.pfp_url || "https://imgs.search.brave.com/Fe2n5GcOZORoEurfgcjGDnkZfcV5yyePLXFaBPXh55I/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMDkv/MjkyLzI0NC9zbWFs/bC9kZWZhdWx0LWF2/YXRhci1pY29uLW9m/LXNvY2lhbC1tZWRp/YS11c2VyLXZlY3Rv/ci5qcGc"}
+                  alt=""
+                  className="w-full h-full rounded-full object-cover"
+                />
             </div>
-            <div className="text-white/60 text-sm">
-              @{displayPost.author?.username} ·{" "}
-              {formatTime(displayPost.created_at)}
+            <div>
+              <p className="text-white font-semibold hover:underline">
+                {displayPost.author?.display_name ||
+                  displayPost.author?.username ||
+                  "User"}
+              </p>
+              <p className="text-white/60 text-sm hover:underline">
+                @{displayPost.author?.username} ·{" "}
+                {formatTime(displayPost.created_at)}
+              </p>
             </div>
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2">
           <button
@@ -399,7 +401,7 @@ export default function Post({ post }: UniversalPostProps) {
                   onClick={handleCopyLink}
                   className="w-full flex items-center gap-3 px-4 py-2 text-white/80 hover:bg-white/10 transition-colors text-left"
                 >
-                  <Link className="w-4 h-4" />
+                  <Linkicon className="w-4 h-4" />
                   <span>Copy link</span>
                 </button>
                 <button

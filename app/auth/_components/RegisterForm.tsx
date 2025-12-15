@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { signUp } from "@/server-actions/auth/actions";
 
 // Zod schema for form validation
 const registerSchema = z
@@ -37,10 +38,9 @@ const registerSchema = z
     path: ["confirmPassword"],
   });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+export type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
-  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -64,68 +64,15 @@ export default function RegisterForm() {
     setServerError(null);
 
     try {
-      // First, sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            username: data.username,
-            displayName: data.displayName,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
+      const success = await signUp(data,`${window.location.origin}/auth/callback`);
 
-      if (authError) {
-        throw authError;
+      if (success) {
+        toast(
+          "Registration successful! Please check your email to confirm your account."
+        );
       }
-
-      // Optional: Create a user profile in your database
-      // if (authData.user) {
-      //   const { error: profileError } = await supabase
-      //     .from("profiles") // Make sure you have this table
-      //     .insert([
-      //       {
-      //         id: authData.user.id,
-      //         username: data.username,
-      //         email: data.email,
-      //         created_at: new Date().toISOString(),
-      //         updated_at: new Date().toISOString(),
-      //       },
-      //     ]);
-
-      //   if (profileError) {
-      //     console.error("Profile creation error:", profileError);
-      //     // Don't throw here - user is created, just profile failed
-      //   }
-      // }
-
-      // console.log("Registration successful:", authData);
-
-      // Show success message and redirect
-      alert(
-        "Registration successful! Please check your email to confirm your account."
-      );
-      // router.push("/auth/login");
-      // router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Registration error:", error);
-
-      // Handle specific Supabase errors
-      if (error.message?.includes("User already registered")) {
-        setServerError(
-          "This email is already registered. Please use a different email or sign in."
-        );
-      } else if (error.message?.includes("password")) {
-        setServerError(
-          "Password does not meet requirements. Please ensure it meets all criteria."
-        );
-      } else {
-        setServerError(
-          error.message || "Registration failed. Please try again."
-        );
-      }
     } finally {
       setLoading(false);
     }
@@ -208,7 +155,9 @@ export default function RegisterForm() {
 
           {/* Username */}
           <div className="flex flex-col gap-[6px]">
-            <label className="text-md font-medium text-black">Display Name</label>
+            <label className="text-md font-medium text-black">
+              Display Name
+            </label>
             <div className="relative">
               <input
                 type="text"

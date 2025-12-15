@@ -5,14 +5,14 @@ import { X, Image, Music, Video, Plus } from "lucide-react";
 import { MediaFile } from "@/types/post/types";
 import { uploadPost } from "@/server-actions/post/actions";
 import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/hooks/auth";
 import { useRouter } from "next/navigation";
+import { UserProfile } from "@/types/auth/types";
+import { toast } from "sonner";
 
-export default function UploadModal() {
+export default function UploadModal({user} : {user: UserProfile}) {
   const supabase = createClient();
   const router = useRouter();
 
-  const { profile, user } = useAuth();
   const [text, setText] = useState("");
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -28,6 +28,7 @@ export default function UploadModal() {
       const postId = await uploadPost(user?.id, text);
       await uploadMedia(postId);
 
+      toast("Post uploaded!");
       router.refresh();
 
       setText("");
@@ -153,7 +154,7 @@ export default function UploadModal() {
       <div className="relative z-10 flex flex-row items-start gap-[25px] w-full">
         {/* Avatar */}
         <img
-          src={profile?.pfp_url}
+          src={user?.pfp_url || "https://imgs.search.brave.com/Fe2n5GcOZORoEurfgcjGDnkZfcV5yyePLXFaBPXh55I/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMDkv/MjkyLzI0NC9zbWFs/bC9kZWZhdWx0LWF2/YXRhci1pY29uLW9m/LXNvY2lhbC1tZWRp/YS11c2VyLXZlY3Rv/ci5qcGc"}
           alt="user pfp"
           className="w-[47px] h-[47px] rounded-full flex-shrink-0"
         />

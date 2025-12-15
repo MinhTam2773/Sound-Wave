@@ -1,5 +1,5 @@
-import LeftSidebar from "@/components/sidebars/LeftSidebar";
-import { RightSidebar } from "@/components/sidebars/RightSidebar";
+import LeftSidebar from "@/components/sidebars/left-side/LeftSidebar";
+import { RightSidebar } from "@/components/sidebars/right-side/RightSidebar";
 import { BottomMusicBar } from "@/components/musicplayer/BottomMusicBar";
 
 export default function RootLayout({

@@ -1,14 +1,14 @@
 import React from "react";
 import UploadModal from "@/components/post/upload/UploadModal";
-import ImagePost from "@/components/post/image/image";
-import AudioPost from "@/components/post/audio/audio";
-import MusicPost from "@/components/post/music/music";
 import { getPosts } from "@/server-actions/post/actions";
 import Post from "@/components/post/post";
+import { getUser } from "@/server-actions/user/actions";
 
 
 export default async function LandingPage() {
   const posts = await getPosts();
+  const user = await getUser();
+  
   return (
     <main className="w-full h-screen overflow-y-scroll bg-[#232323] flex flex-col items-center p-0">
       <div className="w-[709px] max-w-full flex flex-col gap-[20px] mx-auto p-0">
@@ -20,12 +20,12 @@ export default async function LandingPage() {
         </div>
 
         {/* Upload Modal */}
-        <UploadModal />
+        <UploadModal user={user}/>
 
         {/* Posts */}
         <div className="flex flex-col gap-[20px] w-full">
           {posts?.map(post => 
-            <Post key={post.id} post={post} />
+            <Post key={post.id} post={post} user={user} />
           )}
         </div>
       </div>

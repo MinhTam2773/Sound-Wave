@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 // -----------------------------
 // Types
@@ -55,7 +55,7 @@ export default function ProfileClient({ user }: ProfileClientProps) {
           <div className="w-28 h-28 rounded-full overflow-hidden bg-[#2a2a2a] ring-2 ring-white/10">
             {user.pfp_url ? (
               <img
-                src={user.pfp_url}
+                src={user.pfp_url || "https://imgs.search.brave.com/Fe2n5GcOZORoEurfgcjGDnkZfcV5yyePLXFaBPXh55I/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMDkv/MjkyLzI0NC9zbWFs/bC9kZWZhdWx0LWF2/YXRhci1pY29uLW9m/LXNvY2lhbC1tZWRp/YS11c2VyLXZlY3Rv/ci5qcGc"}
                 alt={`${user.username} profile picture`}
                 className="w-full h-full object-cover"
               />
