@@ -181,7 +181,6 @@ export default function Post({ post, user }: UniversalPostProps) {
 
     try {
       const mediaUrls = post.media?.map(m => m.storage_path);
-      console.log(mediaUrls)
 
       await deletePost(post.id, mediaUrls);
 
