@@ -10,7 +10,7 @@ export default function RootLayout({
   return (
     <main className="flex w-full h-screen bg-[#232323]">
       {/* Left Sidebar */}
-      <div className="w-[250px] flex-shrink-0">
+      <div className="w-[250px] shrink-0">
         <LeftSidebar />
       </div>
 
@@ -20,7 +20,7 @@ export default function RootLayout({
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-[250px] flex-shrink-0">
+      <div className="w-[250px] shrink-0 hidden lg:block">
         <RightSidebar />
       </div>
 

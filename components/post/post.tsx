@@ -4,23 +4,24 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Play,
   Pause,
-  Heart,
-  MessageCircle,
   Repeat,
-  Send,
   Bookmark,
   MoreVertical,
   Edit2,
   Trash2,
   Flag,
   Copy,
-  Link as Linkicon
+  Link as Linkicon,
 } from "lucide-react";
 import { deletePost, editPost } from "@/server-actions/post/actions";
 import { PostData } from "@/types/post/types";
 import { toast } from "sonner";
 import Link from "next/link";
 import { UserProfile } from "@/types/auth/types";
+import Image from "next/image";
+import PostModal from "./PostModal";
+import PostActions from "./PostActions";
+import { usePostStore } from "@/store/PostStore";
 
 interface UniversalPostProps {
   post: PostData;
@@ -34,8 +35,8 @@ export default function Post({ post, user }: UniversalPostProps) {
   const displayMedia = displayPost.media || [];
 
   // State
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -44,6 +45,21 @@ export default function Post({ post, user }: UniversalPostProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const optionsRef = useRef<HTMLDivElement>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const initPost = usePostStore((s) => s.initPost);
+  const hasLiked =
+    !!user && (post.likes ?? []).some((like) => like.user_id === user.id);
+
+  useEffect(() => {
+    initPost(post.id, {
+      likesCount: post.likes_count,
+      commentsCount: post.comments_count,
+      sharesCount: post.shares_count,
+      repostsCount: post.reposts_count,
+      hasLiked,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post.id]);
 
   // Close options when clicking outside
   useEffect(() => {
@@ -109,11 +125,6 @@ export default function Post({ post, user }: UniversalPostProps) {
     }
   };
 
-  // Like handler
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-  };
-
   // Save handler
   const handleSave = () => {
     setIsSaved(!isSaved);
@@ -169,7 +180,10 @@ export default function Post({ post, user }: UniversalPostProps) {
     }
 
     try {
-      await deletePost(post.id);
+      const mediaUrls = post.media?.map(m => m.storage_path);
+      console.log(mediaUrls)
+
+      await deletePost(post.id, mediaUrls);
 
       toast("post deleted successfully");
       setIsOptionsOpen(false);
@@ -199,11 +213,9 @@ export default function Post({ post, user }: UniversalPostProps) {
           {displayMedia.slice(0, 4).map((media, index) => (
             <div key={media.id} className="relative">
               {media.media_type === "image" ? (
-                <img
-                  src={media.media_url}
-                  alt=""
-                  className="w-full h-48 object-cover rounded-lg"
-                />
+                <div className="w-full h-48 object-cover rounded-lg">
+                  <Image src={media.media_url} alt="" fill />
+                </div>
               ) : media.media_type === "video" ? (
                 <div className="w-full h-48 bg-gray-700 rounded-lg flex items-center justify-center">
                   <Play className="w-12 h-12 text-white/70" />
@@ -231,11 +243,9 @@ export default function Post({ post, user }: UniversalPostProps) {
 
     if (media.media_type === "image") {
       return (
-        <img
-          src={media.media_url}
-          alt=""
-          className="w-full max-h-[500px] object-cover rounded-lg mt-3"
-        />
+        <div className="relative w-full h-[500px] rounded-lg mt-3 overflow-hidden">
+          <Image src={media.media_url} alt="" fill className="object-cover" />
+        </div>
       );
     }
 
@@ -255,9 +265,9 @@ export default function Post({ post, user }: UniversalPostProps) {
 
     if (media.media_type === "audio") {
       return (
-        <div className="mt-3 p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-lg">
+        <div className="mt-3 p-4 bg-linear-to-r from-purple-900/20 to-pink-900/20 rounded-lg">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+            <div className="w-16 h-16 bg-linear-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
               <Play className="w-8 h-8 text-white" />
             </div>
             <div className="flex-1">
@@ -268,7 +278,7 @@ export default function Post({ post, user }: UniversalPostProps) {
                 </div>
                 <button
                   onClick={togglePlay}
-                  className="w-12 h-12 rounded-full bg-gradient-to-r from-[#9000ff] to-[#ffc300] flex items-center justify-center"
+                  className="w-12 h-12 rounded-full bg-linear-to-r from-[#9000ff] to-[#ffc300] flex items-center justify-center"
                 >
                   {isPlaying ? (
                     <Pause className="w-6 h-6 text-white" />
@@ -300,7 +310,10 @@ export default function Post({ post, user }: UniversalPostProps) {
   };
 
   return (
-    <div className="bg-[#323232] rounded-[15px] border border-[#776f6f] p-4 mb-4 relative">
+    <div
+      className="bg-[#323232] rounded-[15px] border border-[#776f6f] p-4 mb-4 relative"
+      onClick={() => setIsModalOpen(true)}
+    >
       {/* Repost header */}
       {post.is_repost && post.author && (
         <div className="flex items-center gap-2 text-sm text-white/60 mb-2">
@@ -314,13 +327,18 @@ export default function Post({ post, user }: UniversalPostProps) {
       {/* User info */}
       <div className="flex items-center justify-between mb-3">
         <Link href={`/profile/${displayPost.author.username}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full flex-shrink-0">
-                <img
-                  src={displayPost.author.pfp_url || "https://imgs.search.brave.com/Fe2n5GcOZORoEurfgcjGDnkZfcV5yyePLXFaBPXh55I/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMDkv/MjkyLzI0NC9zbWFs/bC9kZWZhdWx0LWF2/YXRhci1pY29uLW9m/LXNvY2lhbC1tZWRp/YS11c2VyLXZlY3Rv/ci5qcGc"}
-                  alt=""
-                  className="w-full h-full rounded-full object-cover"
-                />
+          <div
+            className="flex items-center gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-full shrink-0">
+              <Image
+                src={displayPost.author.pfp_url || "/user/default_user.png"}
+                alt=""
+                width={40}
+                height={40}
+                className="rounded-full object-cover"
+              />
             </div>
             <div>
               <p className="text-white font-semibold hover:underline">
@@ -352,7 +370,11 @@ export default function Post({ post, user }: UniversalPostProps) {
           </button>
 
           {/* Options button */}
-          <div className="relative" ref={optionsRef}>
+          <div
+            className="relative"
+            ref={optionsRef}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setIsOptionsOpen(!isOptionsOpen)}
               className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -425,7 +447,7 @@ export default function Post({ post, user }: UniversalPostProps) {
 
       {/* Caption or Edit mode */}
       {isEditing ? (
-        <div className="mb-3">
+        <div className="mb-3" onClick={(e) => e.stopPropagation()}>
           <textarea
             ref={editTextareaRef}
             value={editedCaption}
@@ -443,7 +465,7 @@ export default function Post({ post, user }: UniversalPostProps) {
             </button>
             <button
               onClick={handleSaveEdit}
-              className="px-4 py-2 bg-gradient-to-r from-[#9000ff] to-[#ffc300] text-white rounded-lg hover:opacity-90 transition-opacity"
+              className="px-4 py-2 bg-linear-to-r from-[#9000ff] to-[#ffc300] text-white rounded-lg hover:opacity-90 transition-opacity"
             >
               Save
             </button>
@@ -460,35 +482,15 @@ export default function Post({ post, user }: UniversalPostProps) {
       {/* Media */}
       {renderMedia()}
 
-      {/* Action buttons */}
-      <div className="flex justify-between mt-4 pt-4 border-t border-white/10">
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-2 transition-colors ${
-            isLiked
-              ? "text-red-400 hover:text-red-300"
-              : "text-white/70 hover:text-white"
-          }`}
-        >
-          <Heart className="w-6 h-6" fill={isLiked ? "currentColor" : "none"} />
-          <span className="text-sm">Like</span>
-        </button>
+      <PostActions user={user} post={post} />
 
-        <button className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-          <MessageCircle className="w-6 h-6" />
-          <span className="text-sm">Comment</span>
-        </button>
-
-        <button className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-          <Repeat className="w-6 h-6" />
-          <span className="text-sm">Repost</span>
-        </button>
-
-        <button className="flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-          <Send className="w-6 h-6" />
-          <span className="text-sm">Share</span>
-        </button>
-      </div>
+      {/* Render the modal */}
+      <PostModal
+        post={post}
+        user={user}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

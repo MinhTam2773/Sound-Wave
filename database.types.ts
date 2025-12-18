@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       audio_tags: {
@@ -75,7 +50,6 @@ export type Database = {
       audios: {
         Row: {
           audio_url: string
-          comments_count: number | null
           cover_photo_url: string | null
           created_at: string | null
           description: string | null
@@ -89,7 +63,6 @@ export type Database = {
         }
         Insert: {
           audio_url: string
-          comments_count?: number | null
           cover_photo_url?: string | null
           created_at?: string | null
           description?: string | null
@@ -103,7 +76,6 @@ export type Database = {
         }
         Update: {
           audio_url?: string
-          comments_count?: number | null
           cover_photo_url?: string | null
           created_at?: string | null
           description?: string | null
@@ -329,7 +301,6 @@ export type Database = {
       comments: {
         Row: {
           audio_id: string | null
-          comments_count: number | null
           created_at: string | null
           id: string
           likes_count: number | null
@@ -341,7 +312,6 @@ export type Database = {
         }
         Insert: {
           audio_id?: string | null
-          comments_count?: number | null
           created_at?: string | null
           id?: string
           likes_count?: number | null
@@ -353,7 +323,6 @@ export type Database = {
         }
         Update: {
           audio_id?: string | null
-          comments_count?: number | null
           created_at?: string | null
           id?: string
           likes_count?: number | null
@@ -630,7 +599,6 @@ export type Database = {
           mime_type: string | null
           order_index: number | null
           post_id: string | null
-          storage_path: string | null
           thumbnail_url: string | null
         }
         Insert: {
@@ -643,7 +611,6 @@ export type Database = {
           mime_type?: string | null
           order_index?: number | null
           post_id?: string | null
-          storage_path?: string | null
           thumbnail_url?: string | null
         }
         Update: {
@@ -656,7 +623,6 @@ export type Database = {
           mime_type?: string | null
           order_index?: number | null
           post_id?: string | null
-          storage_path?: string | null
           thumbnail_url?: string | null
         }
         Relationships: [
@@ -968,9 +934,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

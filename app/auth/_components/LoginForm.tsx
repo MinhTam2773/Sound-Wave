@@ -104,16 +104,16 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="relative w-[531px] max-w-[95vw] rounded-[20px] box-border px-5 py-4 flex flex-col gap-[28px] overflow-hidden">
+    <div className="relative w-[531px] max-w-[95vw] rounded-[20px] box-border px-5 py-4 flex flex-col gap-7 overflow-hidden">
       {/* Gradient Border */}
       <div className="absolute inset-0 rounded-[20px] pointer-events-none z-0">
-        <div className="absolute inset-0 rounded-[20px] bg-gradient-to-r from-[#9100ff] to-[#ffc400]" />
-        <div className="absolute inset-[1px] rounded-[20px] bg-white" />
+        <div className="absolute inset-0 rounded-[20px] bg-linear-to-r from-[#9100ff] to-[#ffc400]" />
+        <div className="absolute inset-px rounded-[20px] bg-white" />
       </div>
 
       <div className="relative z-10">
         {/* Title */}
-        <span className="text-2xl text-center font-bold tracking-[-0.4px] bg-gradient-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] bg-clip-text text-transparent block mb-[15px]">
+        <span className="text-2xl text-center font-bold tracking-[-0.4px] bg-linear-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] bg-clip-text text-transparent block mb-[15px]">
           Welcome Back!
         </span>
 
@@ -131,7 +131,7 @@ const LoginForm = () => {
           autoComplete="off"
         >
           {/* Email */}
-          <div className="flex flex-col gap-[6px]">
+          <div className="flex flex-col gap-1.5">
             <label className=" font-medium text-black">Email</label>
             <div className="relative">
               <input
@@ -155,7 +155,7 @@ const LoginForm = () => {
           </div>
 
           {/* Password */}
-          <div className="flex flex-col gap-[6px]">
+          <div className="flex flex-col gap-1.5">
             <label className=" font-medium text-black">Password</label>
             <div className="relative">
               <input
@@ -187,7 +187,7 @@ const LoginForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="h-[48px] rounded-[15px] w-full bg-gradient-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] text-white text-[18px] font-bold flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="h-12 rounded-[15px] w-full bg-linear-to-r from-[#9100ff] via-[#b23caf] to-[#ffc400] text-white text-[18px] font-bold flex items-center justify-center shadow-md hover:shadow-lg active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? (
               <div className="flex items-center gap-2">
@@ -202,16 +202,16 @@ const LoginForm = () => {
       </div>
 
       {/* OAuth Section */}
-      <div className="relative z-10 w-full flex flex-col gap-[16px] mt-[10px]">
+      <div className="relative z-10 w-full flex flex-col gap-4 mt-2.5">
         <span className="text-[15px] text-[#6b6b6b]">Sign in with:</span>
 
-        <div className="flex items-center gap-[12px]">
+        <div className="flex items-center gap-3">
           {/* Google Button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="flex-1 py-2 rounded-[15px] border border-[#d1d1d1] bg-white flex items-center justify-center gap-[10px] font-semibold cursor-pointer hover:border-[#9100ff] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex-1 py-2 rounded-[15px] border border-[#d1d1d1] bg-white flex items-center justify-center gap-2.5 font-semibold cursor-pointer hover:border-[#9100ff] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <FcGoogle size={22} />
             Google
@@ -222,7 +222,7 @@ const LoginForm = () => {
             type="button"
             onClick={handleFacebookLogin}
             disabled={loading}
-            className="flex-1 py-2 rounded-[15px] bg-[#1877f2] flex items-center justify-center gap-[10px] text-white font-semibold hover:bg-[#145fc4] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex-1 py-2 rounded-[15px] bg-[#1877f2] flex items-center justify-center gap-2.5 text-white font-semibold hover:bg-[#145fc4] hover:shadow-md active:scale-[0.98] transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <FaFacebookF size={20} />
             Facebook
