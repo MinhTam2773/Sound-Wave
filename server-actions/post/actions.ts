@@ -53,7 +53,8 @@ export const getPosts = async () => {
         `
         *,
         media:post_media(*),
-        author:users(username, display_name, pfp_url)
+        author:users(username, display_name, pfp_url),
+        likes(user_id, post_id)
       `
       )
       .order("created_at", { ascending: false });
@@ -85,22 +86,141 @@ export const editPost = async (postId: string, new_caption: string) => {
   revalidatePath("/");
 };
 
-export const deletePost = async (postId: string) => {
+export const deletePost = async (postId: string, mediaUrls: string[]) => {
   try {
     const supabase = await createClient();
 
-    const { error: storageError } = await supabase.storage.from("post-media").remove([`post-media/${postId}`]);
+    const {error: postError} = await supabase.from("posts").delete().eq('id', postId);
+    if (postError) throw postError;
+
+    const { error: storageError } = await supabase.storage.from("post-media").remove(mediaUrls);
     if (storageError) throw storageError;
 
-    const {error: postMediaError} = await supabase.from("post_media").delete().eq('post_id', postId);
-
-    if (postMediaError) throw postMediaError;
-
-    const {error: postError} = await supabase.from("posts").delete().eq('id', postId);
-
-    if (postError) throw postError;
+    revalidatePath('/');
   } catch(error) {
     console.error(error);
   }
-  revalidatePath('/');
+}
+
+export const likePost = async (postId: string, userId: string) => {
+  try {
+    const supabase = await createClient();
+
+    const {error} = await supabase.from("likes").insert({
+      user_id: userId,
+      post_id: postId,
+    })
+
+    if (error) return {success: false, message: error?.message || "error with supabase"};
+    
+    revalidatePath('/');
+    return {success: true, message: "Liked post"}
+  } catch(error) {
+    console.error(error);
+    return {success: false, message: "Unexpected server error"}
+  }
+}
+
+export const unlikePost = async (postId: string, userId: string) => {
+  try {
+      const supabase = await createClient();
+
+      const {error} = await supabase.from("likes").delete().eq("post_id", postId).eq("user_id", userId );
+
+      if (error) return {success: false, message: error.message};
+
+      revalidatePath('/');
+      return {success: true, message: "Unliked post successfully"};
+  } catch(error) {
+    console.error(error);
+    return {success: false, message: "Unexpected server error"};
+  }
+}
+
+export const uploadCommentOnPost = async (postId:string, userId: string, text: string) => {
+  try {
+    const supabase = await createClient();
+
+    const {data, error} = await supabase.from("comments").insert({
+      user_id: userId,
+      post_id: postId,
+      text,
+    }).select(`id,
+      text,
+      parent_comment_id,
+      likes_count,
+      author:users(
+        display_name,
+        username, 
+        pfp_url
+      ),
+      media:comment_media!comment_id(
+        media_url,
+        media_type, 
+        order_index
+      ),
+      likes(
+        user_id
+      ),
+      created_at,
+      updated_at
+      `).single();
+
+    if (error) return {success: false, message: error.message};
+    return {success: true, message: "comment uploaded", comment: data};
+  } catch(error) {
+    console.error(error);
+    return {success: false, message: "Unexpected server error"};
+  }
+}
+
+export const getCommentsByPost = async (postId: string) => {
+  try {
+    const supabase = await createClient();
+
+    const {data, error} = await supabase.from("comments").select(
+      `id,
+      text,
+      parent_comment_id,
+      likes_count,
+      author:users(
+        display_name,
+        username, 
+        pfp_url
+      ),
+      media:comment_media!comment_id(
+        media_url,
+        media_type, 
+        order_index
+      ),
+      likes(
+        user_id
+      ),
+      created_at,
+      updated_at
+      `
+    ).eq("post_id", postId);
+
+    if(error) return {success: false, message: error.message};
+
+    return {success: true, comments: data ?? []}
+  } catch(error) {
+    console.error(error);
+    return {success: false, message: "Unexpected server error"};
+  }
+}
+
+export const deleteComment = async (commentId: string) => {
+  try {
+    const supabase = await createClient();
+
+    const {data, error} = await supabase.from("comments").delete().eq('id', commentId).select('id').single();
+
+    if (error) return {success: false, message: error.message};
+
+    return {success: true, message:"Comment deleted successfully", commentId: data.id};
+  } catch(error) {
+    console.error(error);
+    return {success: false, message: "Server error"};
+  }
 }

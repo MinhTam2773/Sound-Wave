@@ -9,9 +9,9 @@ export default function Header() {
       <div className="flex items-center gap-2 h-10">
         {/* Logo gradient border */}
         <div className="relative w-10 h-10 rounded-md flex items-center justify-center
-          bg-gradient-to-r from-[#9100ff] to-[#ffc400]
+          bg-linear-to-r from-[#9100ff] to-[#ffc400]
           [mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)] 
-          [mask-composite:exclude] p-0"
+          mask-exclude p-0"
         >
           {/* Logo inner container */}
           <div className="w-full h-full rounded-md bg-linear-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300] overflow-hidden flex items-center justify-center">
@@ -41,7 +41,7 @@ export default function Header() {
             aria-label={`Nav Item ${n}`}
             className="w-[100px] h-[83px] flex items-center justify-center cursor-pointer bg-transparent border-none outline-none 
             transition-all active:bg-black/5 focus:bg-black/5
-            max-[1200px]:w-[80px] max-[900px]:w-[60px] max-[600px]:w-12 max-[600px]:h-12"
+            max-[1200px]:w-20 max-[900px]:w-[60px] max-[600px]:w-12 max-[600px]:h-12"
           />
         ))}
       </nav>

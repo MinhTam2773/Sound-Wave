@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { X, Image, Music, Video, Plus } from "lucide-react";
+import { X, Image as ImageIcon, Music, Video, Plus } from "lucide-react";
 import { MediaFile } from "@/types/post/types";
 import { uploadPost } from "@/server-actions/post/actions";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { UserProfile } from "@/types/auth/types";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function UploadModal({user} : {user: UserProfile | null}) {
   const supabase = createClient();
@@ -51,9 +52,10 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
           ? "video"
           : "audio";
 
-        const filePath = `post-media/${postId}/${fileType}/${Date.now()}-${
-          file.name
-        }`;
+        const fileExt = file.name.split(".").pop();
+        const safeFileName = `${crypto.randomUUID()}.${fileExt}`;
+
+        const filePath = `post-media/${postId}/${fileType}/${safeFileName}`;
 
         // Upload to storage
         const { error: uploadError } = await supabase.storage
@@ -75,6 +77,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
           order_index: index,
           mime_type: file.type,
           file_size: file.size,
+          storage_path: filePath
         };
       });
 
@@ -141,25 +144,28 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
         }
       });
     };
-  }, []);
+  }, [mediaFiles]);
 
   return (
-    <div className="relative bg-[#323232] rounded-[10px] border-[0.5px] border-[#776f6f] w-full p-[25px_16px_10px_16px] flex flex-col gap-[10px] min-h-[127px] overflow-hidden">
+    <div className="relative bg-[#323232] rounded-[10px] border-[0.5px] border-[#776f6f] w-full p-[25px_16px_10px_16px] flex flex-col gap-2.5 min-h-[127px] overflow-hidden">
       {/* Gradient border background */}
-      <div className="absolute inset-0 rounded-[10px] p-[1px]">
-        <div className="absolute inset-0 rounded-[10px] bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300]" />
-        <div className="absolute inset-[1px] rounded-[10px] bg-[#323232]" />
+      <div className="absolute inset-0 rounded-[10px] p-px">
+        <div className="absolute inset-0 rounded-[10px] bg-linear-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300]" />
+        <div className="absolute inset-px rounded-[10px] bg-[#323232]" />
       </div>
 
       <div className="relative z-10 flex flex-row items-start gap-[25px] w-full">
         {/* Avatar */}
-        <img
+        <div className="relative overflow-hidden w-[47px] h-[47px] rounded-full shrink-0">
+        <Image
           src={user?.pfp_url || "https://imgs.search.brave.com/Fe2n5GcOZORoEurfgcjGDnkZfcV5yyePLXFaBPXh55I/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMDkv/MjkyLzI0NC9zbWFs/bC9kZWZhdWx0LWF2/YXRhci1pY29uLW9m/LXNvY2lhbC1tZWRp/YS11c2VyLXZlY3Rv/ci5qcGc"}
           alt="user pfp"
-          className="w-[47px] h-[47px] rounded-full flex-shrink-0"
-        />
+          fill
+          className="object-contain"
+          />
+          </div>
 
-        <div className="flex flex-col gap-[10px] w-[calc(100%-47px-25px)]">
+        <div className="flex flex-col gap-2.5 w-[calc(100%-47px-25px)]">
           {/* Media Preview Grid */}
           {mediaFiles.length > 0 && (
             <div className="mb-3">
@@ -170,11 +176,14 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
                     className="relative group w-20 h-20 rounded-lg overflow-hidden border border-[#776f6f]"
                   >
                     {media.type === "image" && (
-                      <img
+                      <div className="relative w-full h-full">
+                      <Image
                         src={media.previewUrl}
                         alt={media.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
+                      </div>
                     )}
 
                     {media.type === "video" && (
@@ -187,7 +196,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
                     )}
 
                     {media.type === "audio" && (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-900 to-cyan-700 flex items-center justify-center">
+                      <div className="w-full h-full bg-linear-to-br from-blue-900 to-cyan-700 flex items-center justify-center">
                         <Music className="text-white" size={32} />
                         <div className="absolute bottom-1 left-1 text-xs text-white bg-black/50 px-1 rounded">
                           Audio
@@ -204,7 +213,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
                     </button>
 
                     {/* File name overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1">
+                    <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-1">
                       <p className="text-xs text-white truncate">
                         {media.name}
                       </p>
@@ -226,9 +235,9 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
 
           {/* Input area */}
           <div className="relative flex flex-row items-center bg-none rounded-[5px] border-[0.5px] border-[#776f6f] p-0 w-full">
-            <div className="absolute inset-0 rounded-[5px] p-[1px]">
-              <div className="absolute inset-0 rounded-[5px] bg-gradient-to-r from-[#9000ff] to-[#ffc300]" />
-              <div className="absolute inset-[1px] rounded-[5px] bg-[#323232]" />
+            <div className="absolute inset-0 rounded-[5px] p-px">
+              <div className="absolute inset-0 rounded-[5px] bg-linear-to-r from-[#9000ff] to-[#ffc300]" />
+              <div className="absolute inset-px rounded-[5px] bg-[#323232]" />
             </div>
 
             <textarea
@@ -236,7 +245,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="What's on your mind?"
-              className="relative z-10 w-full bg-transparent resize-none overflow-hidden outline-none text-[#fff] placeholder:text-[#776f6f] px-[10px] py-[10px] text-[1.1rem] font-normal min-h-[80px]"
+              className="relative z-10 w-full bg-transparent resize-none overflow-hidden outline-none text-white placeholder:text-[#776f6f] p-2.5 text-[1.1rem] font-normal min-h-20"
             />
           </div>
 
@@ -256,7 +265,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
               {/* Media upload buttons */}
               <button
                 onClick={handleMediaButtonClick}
-                className="flex items-center gap-2 p-[5px] rounded-full bg-gradient-to-r  border border-[#dcb2fc] text-white hover:opacity-90 transition-opacity cursor-pointer"
+                className="flex items-center gap-2 p-[5px] rounded-full bg-linear-to-r  border border-[#dcb2fc] text-white hover:opacity-90 transition-opacity cursor-pointer"
               >
                 <Plus size={18} />
               </button>
@@ -270,7 +279,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
                       return acc;
                     }, {} as Record<string, number>)["image"] > 0 && (
                       <div className="flex items-center gap-1">
-                        <Image size={16} />
+                        <ImageIcon size={16} />
                         <span>
                           {mediaFiles.filter((m) => m.type === "image").length}
                         </span>
@@ -310,7 +319,7 @@ export default function UploadModal({user} : {user: UserProfile | null}) {
                 (!text.trim() && mediaFiles.length === 0) || isUploading
               }
               className={`
-                relative z-10 bg-gradient-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300] 
+                relative z-10 bg-linear-to-r from-[#9000ff] via-[#b23caf] to-[#ffc300] 
                 rounded-[5px] border-none text-white text-[1.1rem] font-semibold 
                 w-[90px] h-[33px] flex items-center justify-center tracking-tight 
                 ${
