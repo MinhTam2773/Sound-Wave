@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Play,
   Pause,
-  Repeat,
+  // Repeat,
   Bookmark,
   MoreVertical,
   Edit2,
@@ -12,6 +12,7 @@ import {
   Flag,
   Copy,
   Link as Linkicon,
+  Repeat,
 } from "lucide-react";
 import { deletePost, editPost } from "@/server-actions/post/actions";
 import { PostData } from "@/types/post/types";
@@ -30,8 +31,7 @@ interface UniversalPostProps {
 
 export default function Post({ post, user }: UniversalPostProps) {
   // Show the reposted content if this is a repost
-  const displayPost =
-    post.is_repost && post.original_post ? post.original_post : post;
+  const displayPost = post.original_post ? post.original_post : post;
   const displayMedia = displayPost.media || [];
 
   // State
@@ -48,7 +48,9 @@ export default function Post({ post, user }: UniversalPostProps) {
 
   const initPost = usePostStore((s) => s.initPost);
   const hasLiked =
-    !!user && (post.likes ?? []).some((like) => like.user_id === user.id);
+    !!user && (post.actions ?? []).some((action) => action.user_id === user.id && action.action_type === 'like');
+  const hasReposted =
+    !!user && (post.actions ?? []).some((action) => action.user_id === user.id && action.action_type === 'repost');
 
   useEffect(() => {
     initPost(post.id, {
@@ -57,6 +59,7 @@ export default function Post({ post, user }: UniversalPostProps) {
       sharesCount: post.shares_count,
       repostsCount: post.reposts_count,
       hasLiked,
+      hasReposted,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post.id]);
@@ -314,7 +317,7 @@ export default function Post({ post, user }: UniversalPostProps) {
       onClick={() => setIsModalOpen(true)}
     >
       {/* Repost header */}
-      {post.is_repost && post.author && (
+      {post.original_post && post.author && (
         <div className="flex items-center gap-2 text-sm text-white/60 mb-2">
           <Repeat className="w-4 h-4" />
           <span>
@@ -481,11 +484,11 @@ export default function Post({ post, user }: UniversalPostProps) {
       {/* Media */}
       {renderMedia()}
 
-      <PostActions user={user} post={post} />
+      <PostActions user={user} post={displayPost} />
 
       {/* Render the modal */}
       <PostModal
-        post={post}
+        post={displayPost}
         user={user}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

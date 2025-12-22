@@ -39,6 +39,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      actions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["action_enum"]
+          audio_id: string | null
+          comment_id: string | null
+          created_at: string | null
+          id: string
+          post_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["action_enum"]
+          audio_id?: string | null
+          comment_id?: string | null
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["action_enum"]
+          audio_id?: string | null
+          comment_id?: string | null
+          created_at?: string | null
+          id?: string
+          post_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "actions_audio_id_fkey"
+            columns: ["audio_id"]
+            isOneToOne: false
+            referencedRelation: "audios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "actions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audio_tags: {
         Row: {
           audio_id: string
@@ -430,62 +489,6 @@ export type Database = {
           },
         ]
       }
-      likes: {
-        Row: {
-          audio_id: string | null
-          comment_id: string | null
-          created_at: string | null
-          id: string
-          post_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          audio_id?: string | null
-          comment_id?: string | null
-          created_at?: string | null
-          id?: string
-          post_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          audio_id?: string | null
-          comment_id?: string | null
-          created_at?: string | null
-          id?: string
-          post_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "likes_audio_id_fkey"
-            columns: ["audio_id"]
-            isOneToOne: false
-            referencedRelation: "audios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "likes_comment_id_fkey"
-            columns: ["comment_id"]
-            isOneToOne: false
-            referencedRelation: "comments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "likes_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       messages: {
         Row: {
           chat_id: string | null
@@ -676,8 +679,6 @@ export type Database = {
           comments_count: number | null
           created_at: string | null
           id: string
-          is_repost: boolean | null
-          is_share: boolean | null
           likes_count: number | null
           original_post_id: string | null
           reposts_count: number | null
@@ -690,8 +691,6 @@ export type Database = {
           comments_count?: number | null
           created_at?: string | null
           id?: string
-          is_repost?: boolean | null
-          is_share?: boolean | null
           likes_count?: number | null
           original_post_id?: string | null
           reposts_count?: number | null
@@ -704,8 +703,6 @@ export type Database = {
           comments_count?: number | null
           created_at?: string | null
           id?: string
-          is_repost?: boolean | null
-          is_share?: boolean | null
           likes_count?: number | null
           original_post_id?: string | null
           reposts_count?: number | null
@@ -842,7 +839,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      action_enum: "like" | "repost" | "share"
+      post_action_type: "like" | "repost" | "share"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -972,6 +970,9 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      action_enum: ["like", "repost", "share"],
+      post_action_type: ["like", "repost", "share"],
+    },
   },
 } as const

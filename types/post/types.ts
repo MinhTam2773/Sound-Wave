@@ -13,8 +13,10 @@ export interface MediaItem {
   media_url: string;
   storage_path: string;
   media_type: "image" | "video" | "audio";
-  order_index: number;
+  order_index: number | null;
 }
+
+export type ActionType = "like" | "repost" | "share";
 
 export interface PostData {
   id: string;
@@ -31,12 +33,11 @@ export interface PostData {
     display_name?: string;
     pfp_url?: string;
   };
-  original_post?: PostData; // For reposts
-  is_repost: boolean;
-  likes: {
-    user_id: string;
-    post_id: string;
-  }[]
+  original_post?: PostData | null; // For reposts
+  actions: {
+    user_id: string | null;
+    action_type: ActionType
+  }[];
 }
 
 export interface Comment {
@@ -55,8 +56,9 @@ export interface Comment {
 
   media: CommentMedia[];
 
-  likes: {
+  actions: {
     user_id: string | null;
+    action: ActionType
   }[];
 }
 

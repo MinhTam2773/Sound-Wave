@@ -4,6 +4,7 @@ import { create } from "zustand";
 
 type PostMetrics = {
   hasLiked: boolean;
+  hasReposted: boolean;
   commentsCount: number;
   likesCount: number;
   sharesCount: number;
@@ -14,6 +15,7 @@ type PostStore = {
   posts: Record<string, PostMetrics>;
 
   setHasLiked: (postId: string, hasLiked: boolean) => void;
+  setHasReposted: (postId: string, hasReposted: boolean) => void;
 
   initPost: (postId: string, metrics: PostMetrics) => void;
   incLikes: (postId: string) => void;
@@ -39,13 +41,25 @@ export const usePostStore = create<PostStore>((set) => ({
     }));
   },
 
-  setHasLiked: (postId, hasLiked) => {  
+  setHasLiked: (postId, hasLiked) => {
     set((state) => ({
       posts: {
         ...state.posts,
         [postId]: {
           ...state.posts[postId],
           hasLiked,
+        },
+      },
+    }));
+  },
+
+  setHasReposted: (postId, hasReposted) => {
+    set((state) => ({
+      posts: {
+        ...state.posts,
+        [postId]: {
+          ...state.posts[postId],
+          hasReposted,
         },
       },
     }));
